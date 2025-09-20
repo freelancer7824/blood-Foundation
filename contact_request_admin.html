@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>রক্তদান – অ্যাডমিন</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+:root{
+  --primary:#e63946;--dark:#1d1d1d;--light:#f8f9fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+body{background:var(--light);color:var(--dark);font-size:14px;}
+
+/* Navbar */
+.navbar{
+  background:var(--primary);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 20px;
+  flex-wrap:wrap;
+}
+.navbar .logo{
+  display:flex;align-items:center;gap:10px;
+}
+.navbar img{height:35px;width:35px;object-fit:cover;border-radius:50%;}
+.navbar h1{color:#fff;font-size:1.2rem;}
+.navbar button{
+  background:#1d1d1d;color:#fff;
+  padding:5px 10px;border:none;border-radius:6px;
+  cursor:pointer;font-size:0.9rem;
+}
+.navbar button:hover{background:#333;}
+
+/* Container */
+.container{max-width:1100px;margin:20px auto;padding:10px;}
+.card{background:#fff;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:20px;margin-bottom:20px;}
+.login-box input{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;font-size:0.9rem;}
+.login-box button{width:100%;padding:8px;border:none;border-radius:6px;background:var(--primary);color:#fff;cursor:pointer;font-size:0.9rem;}
+.login-box button:hover{background:#d62839;}
+
+/* Filter */
+.filter-area{margin-bottom:15px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.filter-area input{padding:5px;border:1px solid #ccc;border-radius:6px;font-size:0.9rem;}
+.filter-area button{background:var(--primary);color:#fff;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.9rem;}
+.filter-area button:hover{background:#d62839;}
+.count-box{font-weight:bold;margin-bottom:10px;font-size:0.95rem;}
+
+/* Message List */
+.message-card{background:#fff;border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,0.08);padding:10px;margin-bottom:10px;}
+.message-card .row{display:flex;justify-content:space-between;align-items:center;}
+.message-card .row h4{margin:0;font-size:1rem;word-break:break-word;}
+.action-btn{background:#d62839;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:0.85rem;}
+.action-btn:hover{background:#b71c1c;}
+.message-full{display:none;margin-top:8px;background:#f1f1f1;padding:8px;border-radius:6px;font-size:0.85rem;}
+@media(max-width:500px){
+  .navbar h1{font-size:1rem;}
+  .navbar img{height:30px;width:30px;}
+  .navbar button{font-size:0.8rem;padding:4px 8px;}
+  .message-card .row h4{font-size:0.95rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="logo">
+    <h1>রক্তদান অ্যাডমিন</h1>
+  </div>
+  <button id="logoutBtn" style="display:none">লগআউট</button>
+</div>
+
+<div class="container">
+
+  <!-- Login form -->
+  <div id="loginSection" class="card login-box">
+    <h2>লগইন করুন</h2>
+    <input type="email" id="adminEmail" placeholder="ইমেইল" required>
+    <input type="password" id="adminPass" placeholder="পাসওয়ার্ড" required>
+    <button id="loginBtn">লগইন</button>
+    <p id="loginError" style="color:red;margin-top:10px;"></p>
+  </div>
+
+  <!-- Messages -->
+  <div id="messagesSection" class="card" style="display:none;">
+    <div class="filter-area">
+      <label>তারিখ:</label>
+      <input type="date" id="dateFilter">
+      <button id="filterBtn">ফিল্টার</button>
+    </div>
+    <div id="countBox" class="count-box"></div>
+    <div id="messagesContainer"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+  authDomain: "earn-project-5f892.firebaseapp.com",
+  databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+  projectId: "earn-project-5f892",
+  storageBucket: "earn-project-5f892.firebasestorage.app",
+  messagingSenderId: "8457886057",
+  appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const loginSection = document.getElementById('loginSection');
+const messagesSection = document.getElementById('messagesSection');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginError = document.getElementById('loginError');
+const dateFilter = document.getElementById('dateFilter');
+const filterBtn = document.getElementById('filterBtn');
+const countBox = document.getElementById('countBox');
+const messagesContainer = document.getElementById('messagesContainer');
+
+// Default today
+dateFilter.value = new Date().toISOString().split('T')[0];
+
+// Auth
+loginBtn.addEventListener('click', () => {
+  auth.signInWithEmailAndPassword(document.getElementById('adminEmail').value,
+                                   document.getElementById('adminPass').value)
+      .catch(err => loginError.textContent = err.message);
+});
+logoutBtn.addEventListener('click', ()=>auth.signOut());
+
+auth.onAuthStateChanged(user => {
+  if(user){
+    loginSection.style.display='none';
+    messagesSection.style.display='block';
+    logoutBtn.style.display='inline-block';
+    loadMessages();
+  } else{
+    loginSection.style.display='block';
+    messagesSection.style.display='none';
+    logoutBtn.style.display='none';
+    messagesContainer.innerHTML='';
+    countBox.textContent='';
+  }
+});
+
+filterBtn.addEventListener('click', loadMessages);
+
+function loadMessages(){
+  const selected = new Date(dateFilter.value);
+  const start = new Date(selected); start.setHours(0,0,0,0);
+  const end = new Date(selected); end.setHours(23,59,59,999);
+
+  db.collection('messages')
+    .where('createdAt','>=',firebase.firestore.Timestamp.fromDate(start))
+    .where('createdAt','<=',firebase.firestore.Timestamp.fromDate(end))
+    .orderBy('createdAt','desc')
+    .get()
+    .then(snapshot=>{
+      messagesContainer.innerHTML='';
+      let count=0;
+      snapshot.forEach(doc=>{
+        count++;
+        const data = doc.data();
+        const time = data.createdAt?.toDate().toLocaleString('bn-BD') || '';
+
+        const card = document.createElement('div');
+        card.className = 'message-card';
+        card.innerHTML = `
+          <div class="row">
+            <h4>${count}. ${data.name}</h4>
+            <div>
+              <button class="action-btn view-btn" onclick="toggleView('${doc.id}')">View</button>
+              <button class="action-btn" onclick="deleteMsg('${doc.id}')">ডিলিট</button>
+            </div>
+          </div>
+          <div id="full-${doc.id}" class="message-full">
+            <strong>ইমেইল:</strong> ${data.email}<br>
+            <strong>সময়:</strong> ${time}<br>
+            <strong>মেসেজ:</strong> ${data.message}
+          </div>
+        `;
+        messagesContainer.appendChild(card);
+      });
+      countBox.textContent = "মোট মেসেজ: " + count;
+    });
+}
+
+function toggleView(id){
+  const el = document.getElementById('full-'+id);
+  el.style.display = (el.style.display==='block')?'none':'block';
+}
+
+function deleteMsg(id){
+  if(confirm('আপনি কি মেসেজটি মুছে ফেলতে চান?')){
+    db.collection('messages').doc(id).delete().then(loadMessages);
+  }
+}
+</script>
+</body>
+</html>

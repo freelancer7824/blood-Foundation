@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>রক্ত গ্রহণ - Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Noto Sans Bengali',sans-serif;
+  background:#f0f2f5;
+  padding:20px;
+  color:#333;
+}
+header{
+  text-align:center;
+  margin-bottom:20px;
+  color:#1d3557;
+  font-weight:600;
+  font-size:24px;
+}
+
+/* -------- Filter Section -------- */
+.filters{
+  max-width:1200px;
+  margin:0 auto 20px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.filters select{
+  flex:1 1 180px;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:15px;
+}
+
+/* -------- Table -------- */
+.table-box{
+  background:#fff;
+  border-radius:14px;
+  overflow-x:auto;
+  max-width:1200px;
+  margin:0 auto;
+  box-shadow:0 6px 20px rgba(0,0,0,0.1);
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+thead{
+  background:#e63946;
+  color:#fff;
+}
+thead th{
+  padding:12px;
+  font-weight:600;
+  text-align:left;
+  font-size:16px;
+}
+tbody td{
+  padding:10px 12px;
+  border-top:1px solid #eee;
+  word-wrap:break-word;
+  white-space:normal;
+  font-size:15px;
+}
+tbody tr:hover{background:#f9fafc}
+
+/* Status badge */
+.status{
+  display:inline-block;
+  padding:4px 5px;
+  border-radius:20px;
+  font-weight:600;
+  font-size:10px;
+  white-space:nowrap;
+}
+.status.Pending{background:#ffe066;color:#5c4400;}
+.status.Confirmed{background:#4eca64;color:#054d23;}
+.status.Rejected{background:#ff8787;color:#6b0000;}
+
+/* View button */
+.view-btn{
+  background:#1d3557;
+  color:#fff;
+  border:none;
+  padding:5px 12px;
+  border-radius:8px;
+  font-size:12px;
+  cursor:pointer;
+  transition:0.2s;
+}
+.view-btn:hover{background:#457b9d}
+
+/* -------- Modal -------- */
+.modal{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.55);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  z-index:999;
+}
+.modal.active{display:flex}
+.card{
+  background:#fff;
+  border-radius:18px;
+  max-width:420px;
+  width:100%;
+  padding:28px 22px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  animation:pop .25s ease;
+}
+@keyframes pop{
+  from{transform:scale(.9);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.card h3{
+  margin-bottom:12px;
+  color:#e63946;
+  font-weight:600;
+}
+.card p{
+  margin:7px 0;
+  font-size:15px;
+  line-height:1.5;
+}
+
+/* Buttons inside modal */
+.action-buttons{
+  margin-top:22px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.action-buttons button{
+  flex:1;
+  padding:10px 14px;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+.confirm-btn{background:#4eca64;color:#054d23;}
+.reject-btn{background:#ff8787;color:#6b0000;}
+.close-btn{background:#1d3557;color:#fff;}
+.action-buttons button:hover{opacity:0.85}
+
+/* -------- Responsive -------- */
+@media(max-width:600px){
+  thead th,tbody td{font-size:14px;padding:10px 8px}
+  .view-btn{font-size:13px;padding:6px 10px}
+}
+</style>
+</head>
+<body>
+
+<header>রক্ত গ্রহণ - Admin Panel</header>
+
+<div class="filters">
+  <select id="filterDistrict">
+    <option value="">সকল জেলা</option>
+  </select>
+  <select id="filterUpazila">
+    <option value="">সকল উপজেলা</option>
+  </select>
+  <select id="filterBloodGroup">
+    <option value="">সকল ব্লাড গ্রুপ</option>
+    <option value="A+">A+</option><option value="A-">A-</option>
+    <option value="B+">B+</option><option value="B-">B-</option>
+    <option value="O+">O+</option><option value="O-">O-</option>
+    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+  </select>
+  <select id="filterStatus">
+    <option value="">সকল স্ট্যাটাস</option>
+    <option value="Pending">Pending</option>
+    <option value="Confirmed">Confirmed</option>
+    <option value="Rejected">Rejected</option>
+  </select>
+</div>
+
+<div class="table-box">
+<table id="requestsTable">
+  <thead>
+    <tr>
+      <th style="width:30%">নাম</th>
+      <th style="width:20%">রক্তের গ্রুপ</th>
+      <th style="width:20%">স্ট্যাটাস</th>
+      <th style="width:30%">অ্যাকশন</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+</div>
+
+<!-- -------- Modal -------- -->
+<div class="modal" id="infoModal">
+  <div class="card">
+    <h3 id="modalName"></h3>
+    <p><strong>বয়স:</strong> <span id="modalAge"></span></p>
+    <p><strong>জেলা:</strong> <span id="modalDistrict"></span></p>
+    <p><strong>উপজেলা:</strong> <span id="modalUpazila"></span></p>
+    <p><strong>রক্তের গ্রুপ:</strong> <span id="modalBlood"></span></p>
+    <p><strong>ফোন:</strong> <span id="modalPhone"></span></p>
+    <p><strong>হাসপাতাল:</strong> <span id="modalHospital"></span></p>
+    <p><strong>প্রয়োজন তারিখ:</strong> <span id="modalDate"></span></p>
+    <p><strong>কত ব্যাগ রক্ত লাগবে:</strong> <span id="modalBloodBags"></span></p>
+    <p><strong>রোগীর সমস্যা:</strong> <span id="modalPatientProblem"></span></p>
+    <p><strong>স্ট্যাটাস:</strong> <span id="modalStatus"></span></p>
+
+    <div class="action-buttons">
+      <button class="confirm-btn" onclick="updateStatus('Confirmed')">✅ কনফার্ম</button>
+      <button class="reject-btn" onclick="updateStatus('Rejected')">❌ রিজেক্ট</button>
+      <button class="close-btn" onclick="closeModal()">বন্ধ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+// ======== Firebase Config ========
+const firebaseConfig = {
+  apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+  authDomain: "earn-project-5f892.firebaseapp.com",
+  databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+  projectId: "earn-project-5f892",
+  storageBucket: "earn-project-5f892.firebasestorage.app",
+  messagingSenderId: "8457886057",
+  appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// ======== District & Upazila ========
+const upoData = {
+  "ঢাকা": ["ঢাকা সদর","ফরিদপুর","গাজীপুর","গোপালগঞ্জ","কিশোরগঞ্জ","মাদারীপুর","মানিকগঞ্জ","নরসিংদী","রাজবাড়ী","শরীয়তপুর","টাঙ্গাইল"],
+  "চট্টগ্রাম": ["চট্টগ্রাম সদর","কক্সবাজার","কুমিল্লা","ফেনী","ব্রাহ্মণবাড়ীয়া","নোয়াখালী","রাঙ্গামাটি","খাগড়াছড়ি","বান্দরবান","লক্ষ্মীপুর"],
+  "খুলনা": ["খুলনা সদর","যশোর","সাতক্ষীরা","বাগেরহাট","চুয়াডাঙ্গা","মেহেরপুর","নড়াইল","কুষ্টিয়া","মাগুরা","ঝিনাইদহ"],
+  "রাজশাহী": ["রাজশাহী সদর","বগুড়া","জয়পুরহাট","নওগাঁ","নাটোর","চাপাইনবাবগঞ্জ","পাবনা","সিরাজগঞ্জ"],
+  "বরিশাল": ["বরিশাল সদর","বরগুনা","ভোলা","ঝালকাঠি","পটুয়াখালী","পিরোজপুর"],
+  "সিলেট": ["সিলেট সদর","মৌলভীবাজার","হবিগঞ্জ","সুনামগঞ্জ"],
+  "রংপুর": ["রংপুর সদর","দিনাজপুর","ঠাকুরগাঁও","পঞ্চগড়","কুড়িগ্রাম","লালমনিরহাট","নীলফামারী","গাইবান্ধা"],
+  "ময়মনসিংহ": ["ময়মনসিংহ সদর","জামালপুর","নেত্রকোনা","শেরপুর"]
+};
+
+const filterDistrict=document.getElementById('filterDistrict');
+const filterUpazila=document.getElementById('filterUpazila');
+for(let jela in upoData){
+  let opt=document.createElement('option');
+  opt.value=jela; opt.textContent=jela;
+  filterDistrict.appendChild(opt);
+}
+filterDistrict.addEventListener('change',function(){
+  const jela=this.value;
+  filterUpazila.innerHTML='<option value="">সকল উপজেলা</option>';
+  if(jela && upoData[jela]){
+    upoData[jela].forEach(u=>{
+      const opt=document.createElement('option');
+      opt.value=u; opt.textContent=u;
+      filterUpazila.appendChild(opt);
+    });
+  }
+  renderTable();
+});
+filterUpazila.addEventListener('change',renderTable);
+document.getElementById('filterBloodGroup').addEventListener('change',renderTable);
+document.getElementById('filterStatus').addEventListener('change',renderTable);
+
+let requestsData = {};
+let currentId = null;
+
+// ======== Fetch Data ========
+firebase.database().ref('bloodRequests').on('value', snapshot=>{
+  requestsData = snapshot.val() || {};
+  renderTable();
+});
+
+// ======== Render Table ========
+function renderTable(){
+  const tbody=document.querySelector('#requestsTable tbody');
+  tbody.innerHTML='';
+  const d=filterDistrict.value,
+        u=filterUpazila.value,
+        b=document.getElementById('filterBloodGroup').value,
+        s=document.getElementById('filterStatus').value;
+
+  Object.keys(requestsData).forEach(key=>{
+    const req=requestsData[key];
+    // default list: only Pending + Confirmed
+    if(!s && req.status==="Rejected") return;
+    if(d && req.district!==d) return;
+    if(u && req.upazila!==u) return;
+    if(b && req.bloodGroup!==b) return;
+    if(s && req.status!==s) return;
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${req.patientName}</td>
+      <td>${req.bloodGroup}</td>
+      <td><span class="status ${req.status}">${req.status}</span></td>
+      <td><button class="view-btn" onclick="openModal('${key}')"><i class="fa fa-eye"></i> View</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ======== Modal ========
+function openModal(id){
+  currentId=id;
+  const r=requestsData[id];
+  if(!r) return;
+  document.getElementById('modalName').textContent=r.patientName || '';
+  document.getElementById('modalAge').textContent=r.patientAge || '';
+  document.getElementById('modalDistrict').textContent=r.district || '';
+  document.getElementById('modalUpazila').textContent=r.upazila || '';
+  document.getElementById('modalBlood').textContent=r.bloodGroup || '';
+  document.getElementById('modalPhone').textContent=r.phone || '';
+  document.getElementById('modalHospital').textContent=r.hospital || '';
+  document.getElementById('modalDate').textContent=r.neededDate || '';
+  document.getElementById('modalBloodBags').textContent=r.bloodBags || '';
+  document.getElementById('modalPatientProblem').textContent=r.patientProblem || '';
+  document.getElementById('modalStatus').textContent=r.status || '';
+
+  document.getElementById('infoModal').classList.add('active');
+}
+function closeModal(){
+  document.getElementById('infoModal').classList.remove('active');
+}
+
+// ======== Update Status ========
+function updateStatus(status){
+  if(!currentId) return;
+  firebase.database().ref('bloodRequests/'+currentId).update({status})
+    .then(()=>{ closeModal(); })
+    .catch(err=>alert("Error: "+err.message));
+}
+</script>
+</body>
+</html>

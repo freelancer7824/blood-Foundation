@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ইসলামিক ব্লাড ফাউন্ডেশন</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+html,body{width:100%;overflow-x:hidden;scroll-behavior:smooth;background:#fff;color:#333;line-height:1.6;}
+
+/* ---------- Hero Section ---------- */
+.hero{
+    width:100%;
+    min-height:80vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    background:linear-gradient(135deg,#d32f2f,#ff7961);
+    color:#fff;
+    padding:60px 15px;
+    position:relative;
+    overflow:hidden;
+}
+.hero h1{
+    font-size:2.6rem;
+    margin-bottom:20px;
+    text-shadow:2px 2px 6px rgba(0,0,0,0.3);
+    transition:opacity 1s ease, transform 1s ease;
+}
+.hero p{
+    font-size:1.3rem;
+    margin-bottom:30px;
+    max-width:600px;
+    text-shadow:1px 1px 4px rgba(0,0,0,0.3);
+}
+.hero .btn{
+    padding:14px 35px;
+    background:#fff;
+    color:#d32f2f;
+    font-weight:bold;
+    border-radius:30px;
+    transition:0.3s;
+    text-decoration:none;
+}
+.hero .btn:hover{background:#ffe0e0;}
+
+/* Animated classes for hero text */
+.fade-slide-out{
+    opacity:0;
+    transform:translateY(-20px);
+}
+.fade-slide-in{
+    opacity:1;
+    transform:translateY(0);
+}
+
+/* ---------- Sections ---------- */
+section{width:100%;max-width:1200px;margin:auto;padding:80px 15px;}
+.section-title{text-align:center;margin-bottom:50px;color:#d32f2f;font-size:2rem;position:relative;}
+.section-title::after{content:'';width:60px;height:4px;background:#d32f2f;display:block;margin:10px auto 0;border-radius:2px;}
+.about{display:flex;flex-wrap:wrap;gap:30px;align-items:center;justify-content:center;}
+.about .text{flex:1;min-width:280px;font-size:1rem;}
+.about img{flex:1;max-width:100%;border-radius:15px;object-fit:cover;box-shadow:0 10px 20px rgba(0,0,0,0.1);}
+.order-info{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;}
+.order-card{flex:1;min-width:250px;background:#ffe0e0;padding:30px;border-radius:15px;text-align:center;transition:0.3s;box-shadow:0 6px 15px rgba(0,0,0,0.1);}
+.order-card:hover{transform:translateY(-10px);background:#ffcdd2;}
+.order-card i{font-size:2rem;margin-bottom:15px;color:#d32f2f;transition:0.3s;}
+.order-card h3{margin-bottom:10px;font-weight:700;}
+.order-card p{font-size:0.95rem;}
+.stats{display:flex;flex-wrap:wrap;gap:30px;justify-content:center;text-align:center;}
+.stat{flex:1;min-width:150px;background:#ffebee;padding:30px;border-radius:15px;transition:0.3s;box-shadow:0 6px 15px rgba(0,0,0,0.05);}
+.stat h3{font-size:2rem;margin-bottom:10px;color:#d32f2f;}
+.stat p{font-weight:bold;}
+footer{background:#d32f2f;color:#fff;text-align:center;padding:40px 15px;}
+footer p{margin-bottom:15px;font-size:1rem;}
+footer .social a{color:#fff;margin:0 10px;font-size:1.3rem;transition:0.3s;}
+footer .social a:hover{color:#ffebee;}
+@media(max-width:768px){.hero h1{font-size:2rem;}.hero p{font-size:1rem;}.about{flex-direction:column;}.order-info{flex-direction:column;}.stats{flex-direction:column;}}
+@media(max-width:480px){.hero h1{font-size:1.6rem;}.hero p{font-size:0.9rem;}.hero .btn{padding:12px 25px;font-size:0.9rem;}}
+
+/* Slide Animations for sections */
+.slide-in-left{opacity:0;transform:translateX(-50px);animation:slideLeft 1s forwards;animation-play-state:paused;}
+.slide-in-right{opacity:0;transform:translateX(50px);animation:slideRight 1s forwards;animation-play-state:paused;}
+@keyframes slideLeft{to{opacity:1;transform:translateX(0);}}
+@keyframes slideRight{to{opacity:1;transform:translateX(0);}}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<section class="hero">
+    <h1 id="heroText">হারাবো না কখনো মানবতার দিক, থাকবো সদা মানুষের পাশে হয়ে মানবিক</h1>
+    <p>আপনার প্রয়োজনীয় রক্ত আমরা দ্রুত পৌঁছে দেই। রোগী বা প্রিয়জনের জীবন বাঁচান।</p>
+    <a href="signup.html" class="btn">Join Now</a>
+</section>
+
+<!-- About Section -->
+<section id="about">
+    <div class="about">
+        <div class="text slide-in-left">
+            <p>ইসলামিক ব্লাড ফাউন্ডেশন দেশের মানুষের জন্য নিরাপদ এবং দ্রুত রক্ত সরবরাহ নিশ্চিত করে। আমরা প্রতিটি প্রয়োজনের ক্ষেত্রে দ্রুত ব্যবস্থা গ্রহণ করি।</p>
+            <p>আমাদের লক্ষ্য হলো রক্ত সহজলভ্য করা এবং সচেতনতা বৃদ্ধি করা।</p>
+        </div>
+        <img src="logo.png" alt="রক্তদান" class="slide-in-right">
+    </div>
+</section>
+
+<!-- Order Section -->
+<section id="order">
+    <div class="order-info">
+        <div class="order-card slide-in-left">
+            <i class="fas fa-tint"></i>
+            <h3>রক্তের প্রয়োজন নির্ধারণ</h3>
+            <p>আপনার রক্তের গ্রুপ এবং পরিমাণ নির্বাচন করুন।</p>
+        </div>
+        <div class="order-card slide-in-right">
+            <i class="fas fa-paper-plane"></i>
+            <h3>অর্ডার সাবমিট করুন</h3>
+            <p>সরাসরি আমাদের সিস্টেমে অর্ডার জমা দিন।</p>
+        </div>
+        <div class="order-card slide-in-left">
+            <i class="fas fa-truck"></i>
+            <h3>দ্রুত ডেলিভারি</h3>
+            <p>আমরা নিশ্চিত করি রক্ত নিরাপদে এবং দ্রুত পৌঁছায়।</p>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section id="stats">
+    <div class="stats">
+        <div class="stat slide-in-left">
+            <h3>10,000+</h3>
+            <p>রক্তদাতা</p>
+        </div>
+        <div class="stat slide-in-right">
+            <h3>25,000+</h3>
+            <p>জীবন বাঁচানো</p>
+        </div>
+        <div class="stat slide-in-left">
+            <h3>50+</h3>
+            <p>সক্রিয় শাখা</p>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>ইসলামিক ব্লাড ফাউন্ডেশন – দেশের মানুষের জন্য দ্রুত রক্ত সরবরাহ</p>
+    <div class="social">
+        <a href="#"><i class="fab fa-facebook-f"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
+    </div>
+    <p>&copy; 2025 ইসলামিক ব্লাড ফাউন্ডেশন | সর্বস্বত্ব সংরক্ষিত</p>
+</footer>
+
+<!-- JS -->
+<script>
+// Scroll animation for other sections
+const slideElements = document.querySelectorAll('.slide-in-left, .slide-in-right');
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if(entry.isIntersecting){
+            entry.target.style.animationPlayState = 'running';
+        }
+    });
+},{threshold:0.1});
+slideElements.forEach(el => observer.observe(el));
+
+// Hero text auto change with smooth fade + slide
+const heroTexts = [
+  "হারাবো না কখনো মানবতার দিক, থাকবো সদা মানুষের পাশে হয়ে মানবিক",
+  "যদি হই রক্তদাতা",
+  "জয় করবো মানবতা"
+];
+let index = 0;
+const heroTextEl = document.getElementById('heroText');
+
+setInterval(() => {
+    heroTextEl.classList.add('fade-slide-out');
+    setTimeout(() => {
+        index = (index + 1) % heroTexts.length;
+        heroTextEl.textContent = heroTexts[index];
+        heroTextEl.classList.remove('fade-slide-out');
+        heroTextEl.classList.add('fade-slide-in');
+        setTimeout(()=> heroTextEl.classList.remove('fade-slide-in'),1000);
+    },1000); // fade out duration
+},4000); // 4s interval
+</script>
+
+</body>
+</html>

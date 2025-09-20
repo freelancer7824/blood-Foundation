@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>রক্তদান সেবা – Services</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+:root {
+  --primary:#e63946;
+  --dark:#1d1d1d;
+  --light:#f8f9fa;
+  --gray:#6c757d;
+}
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Noto Sans Bengali', sans-serif;
+}
+body{
+  background:var(--light);
+  color:var(--dark);
+  line-height:1.6;
+}
+
+/* Header / Hero Section */
+.hero{
+  background: linear-gradient(rgba(230,57,70,0.7),rgba(230,57,70,0.7)),
+  url('https://images.unsplash.com/photo-1603398938378-4a3a153f76dc?auto=format&fit=crop&w=1500&q=80') center/cover;
+  color:white;
+  text-align:center;
+  padding:100px 20px;
+}
+.hero h1{
+  font-size:3rem;
+  margin-bottom:20px;
+}
+.hero p{
+  font-size:1.2rem;
+}
+
+/* Services Section */
+.services{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
+  gap:30px;
+  max-width:1200px;
+  margin:80px auto;
+  padding:0 20px;
+}
+.service-card{
+  background:white;
+  border-radius:20px;
+  box-shadow:0 10px 20px rgba(0,0,0,0.1);
+  text-align:center;
+  padding:40px 20px;
+  transition:transform 0.3s ease, box-shadow 0.3s ease;
+}
+.service-card:hover{
+  transform:translateY(-10px);
+  box-shadow:0 15px 30px rgba(0,0,0,0.15);
+}
+.service-card i{
+  font-size:50px;
+  color:var(--primary);
+  margin-bottom:20px;
+}
+.service-card h3{
+  font-size:1.5rem;
+  margin-bottom:15px;
+}
+.service-card p{
+  color:var(--gray);
+  font-size:1rem;
+}
+
+/* Call To Action */
+.cta{
+  background:var(--primary);
+  color:white;
+  text-align:center;
+  padding:60px 20px;
+  margin-top:60px;
+}
+.cta h2{
+  font-size:2rem;
+  margin-bottom:20px;
+}
+.cta a{
+  background:white;
+  color:var(--primary);
+  text-decoration:none;
+  font-weight:600;
+  padding:12px 30px;
+  border-radius:50px;
+  transition:background 0.3s;
+}
+.cta a:hover{
+  background:var(--light);
+}
+
+/* Footer */
+footer{
+  background:var(--dark);
+  color:white;
+  text-align:center;
+  padding:20px;
+  margin-top:40px;
+}
+</style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<section class="hero">
+  <h1>রক্তদান সেবা</h1>
+  <p>প্রাণ বাঁচানোর মহৎ কাজে আমাদের সেবা সমূহ</p>
+</section>
+
+<!-- Services Cards -->
+<section class="services">
+  <div class="service-card">
+    <i class="fas fa-tint"></i>
+    <h3>রক্ত সংগ্রহ অভিযান</h3>
+    <p>বিভিন্ন এলাকায় নিয়মিত রক্ত সংগ্রহের আয়োজন করি যেন প্রতিটি প্রয়োজনীয় রোগী রক্ত পায়।</p>
+  </div>
+
+  <div class="service-card">
+    <i class="fas fa-hand-holding-heart"></i>
+    <h3>জরুরি রক্ত সরবরাহ</h3>
+    <p>জরুরি সময়ে দ্রুত রক্ত সরবরাহের জন্য আমাদের স্বেচ্ছাসেবী টিম সবসময় প্রস্তুত।</p>
+  </div>
+
+  <div class="service-card">
+    <i class="fas fa-users"></i>
+    <h3>ডোনার নেটওয়ার্ক</h3>
+    <p>রক্তদাতাদের একটি বিশাল নেটওয়ার্ক গড়ে তুলি যাতে প্রয়োজনের সময় সহজে ডোনার পাওয়া যায়।</p>
+  </div>
+
+  <div class="service-card">
+    <i class="fas fa-hospital"></i>
+    <h3>হাসপাতাল সহযোগিতা</h3>
+    <p>হাসপাতালের সাথে সমন্বয় করে রক্তদানের কার্যক্রম আরো সহজ করি।</p>
+  </div>
+</section>
+
+<!-- Call To Action -->
+<section class="cta">
+  <h2>আজই রক্তদাতা হোন এবং জীবন বাঁচান!</h2>
+  <a href="dashboard.html">রক্ত দিন</a>
+</section>
+
+<!-- Footer -->
+<footer>
+  &copy; ২০২৫ রক্তদান ফাউন্ডেশন | সমস্ত অধিকার সংরক্ষিত
+</footer>
+
+</body>
+</html>

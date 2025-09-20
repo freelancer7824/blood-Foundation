@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>রক্তদান - সাইনআপ / লগইন</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+        body{background:#ffe6e6;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;}
+        .container{background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 25px rgba(0,0,0,0.1);width:100%;max-width:500px;}
+        h2{text-align:center;margin-bottom:20px;color:#d32f2f;}
+        form{display:flex;flex-direction:column;}
+        input,select{margin-bottom:15px;padding:12px;border-radius:8px;border:1px solid #ccc;font-size:16px;}
+        input:focus,select:focus{outline:none;border-color:#d32f2f;box-shadow:0 0 5px rgba(211,47,47,0.3);}
+        button{padding:12px;background:#d32f2f;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;transition:.3s;}
+        button:hover{background:#b71c1c;}
+        .toggle-link{text-align:center;margin-top:15px;font-size:14px;}
+        .toggle-link a{color:#d32f2f;text-decoration:none;}
+        .toggle-link a:hover{text-decoration:underline;}
+        .selected-display{margin-bottom:10px;font-weight:500;color:#333;}
+        .error{color:red;font-size:14px;margin-top:-10px;margin-bottom:10px;}
+    </style>
+</head>
+<body>
+    <!-- ================== SIGNUP ================== -->
+    <div class="container" id="signup-container" style=display:none;>
+        <h2>রক্তদান - সাইনআপ</h2>
+        <form id="signupForm">
+            <input type="text" id="fullname" placeholder="পুরো নাম" required>
+            <input type="number" id="age" placeholder="বয়স (১৮-৭০)" min="18" max="70" required>
+            
+            <div class="selected-display" id="selectedDivision">নির্বাচিত বিভাগ: নেই</div>
+            <select id="division" required>
+                <option value="">বিভাগ নির্বাচন করুন</option>
+            </select>
+            
+            <div class="selected-display" id="selectedDistrict">নির্বাচিত জেলা: নেই</div>
+            <select id="jela" required disabled>
+                <option value="">জেলা নির্বাচন করুন</option>
+            </select>
+            
+            <div class="selected-display" id="selectedUpazila">নির্বাচিত উপজেলা: নেই</div>
+            <select id="upojela" required disabled>
+                <option value="">উপজেলা নির্বাচন করুন</option>
+            </select>
+            
+            <select id="bloodGroup" required>
+                <option value="">রক্তের গ্রুপ নির্বাচন করুন</option>
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+            </select>
+            
+            <input type="text" id="phone" placeholder="ফোন নম্বর" required>
+            <input type="email" id="email" placeholder="ইমেইল (ঐচ্ছিক)">
+            <input type="password" id="password" placeholder="পাসওয়ার্ড" required>
+            <input type="password" id="confirmPassword" placeholder="পাসওয়ার্ড নিশ্চিত করুন" required>
+            <div id="passwordError" class="error"></div>
+            
+            <button type="submit">সাইনআপ</button>
+        </form>
+        <div class="toggle-link">
+            ইতিমধ্যে একাউন্ট আছে? <a href="#" onclick="toggleForms()">লগইন করুন</a>
+        </div>
+    </div>
+
+    <!-- ================== LOGIN ================== -->
+    <div class="container" id="login-container" style="display:block;">
+        <h2>রক্তদান - লগইন</h2>
+        <form id="loginForm">
+            <input type="text" id="loginId" placeholder="ফোন নম্বর অথবা ইমেইল" required>
+            <input type="password" id="loginPassword" placeholder="পাসওয়ার্ড" required>
+            <button type="submit">লগইন</button>
+        </form>
+        <div class="toggle-link">
+            একাউন্ট নেই? <a href="#" onclick="toggleForms()">সাইনআপ করুন</a>
+        </div>
+    </div>
+
+    <!-- ================== FIREBASE ================== -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+            authDomain: "earn-project-5f892.firebaseapp.com",
+            databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+            projectId: "earn-project-5f892",
+            storageBucket: "earn-project-5f892.firebasestorage.app",
+            messagingSenderId: "8457886057",
+            appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        const signupContainer = document.getElementById('signup-container');
+        const loginContainer = document.getElementById('login-container');
+        
+        function toggleForms(){
+            signupContainer.style.display = signupContainer.style.display === 'none' ? 'block' : 'none';
+            loginContainer.style.display = loginContainer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        /* ================== Division → District → Upazila DATA ================== */
+        const bangladeshData = {
+            "ঢাকা বিভাগ": {
+                "ঢাকা": ["গুলশান", "মিরপুর", "মোহাম্মদপুর", "মতিঝিল", "সুত্রাপুর", "রমনা", "ধানমন্ডি", "তেজগাঁও", "লালবাগ", "কমলাপুর", "হাজারীবাগ", "শ্যামপুর", "বাড্ডা", "উত্তরা", "খিলগাঁও", "কাফরুল", "কামরাঙ্গীরচর", "দমদম", "শাহ আলী", "তুরাগ", "সাবেক সাভার", "ধামরাই", "নবাবগঞ্জ", "দোহার", "কেরানীগঞ্জ"],
+                "গাজীপুর": ["গাজীপুর সদর", "কালীগঞ্জ", "কালিয়াকৈর", "কাপাসিয়া", "শ্রীপুর"],
+                "নারায়ণগঞ্জ": ["নারায়ণগঞ্জ সদর", "বন্দর", "ফতুল্লা", "সিদ্ধিরগঞ্জ", "রূপগঞ্জ", "আড়াইহাজার", "সোনারগাঁও"],
+                "মানিকগঞ্জ": ["মানিকগঞ্জ সদর", "সিংগাইর", "শিবালয়", "হরিরামপুর", "ঘিওর", "দৌলতপুর"],
+                "মুন্সিগঞ্জ": ["মুন্সিগঞ্জ সদর", "শ্রীনগর", "সিরাজদিখান", "লৌহজং", "গজারিয়া", "টংগিবাড়ী"],
+                "রাজবাড়ী": ["রাজবাড়ী সদর", "গোয়ালন্দ", "পাংশা", "বালিয়াকান্দি", "কালুখালী"],
+                "মাদারীপুর": ["মাদারীপুর সদর", "শিবচর", "কালকিনি", "রাজৈর"],
+                "গোপালগঞ্জ": ["গোপালগঞ্জ সদর", "কাশিয়ানী", "টুঙ্গিপাড়া", "কোটালীপাড়া", "মুকসুদপুর"],
+                "ফরিদপুর": ["ফরিদপুর সদর", "আলফাডাঙ্গা", "বোয়ালমারী", "সদরপুর", "নগরকান্দা", "ভাঙ্গা", "চরভদ্রাসন", "মধুখালী", "সালথা"],
+                "টাঙ্গাইল": ["টাঙ্গাইল সদর", "সখীপুর", "ভূয়াপুর", "ধনবাড়ী", "নাগরপুর", "মির্জাপুর", "গোপালপুর", "ঘাটাইল", "কালিহাতী", "বাসাইল", "দেলদুয়ার"],
+                "কিশোরগঞ্জ": ["কিশোরগঞ্জ সদর", "কটিয়াদী", "ভৈরব", "তাড়াইল", "হোসেনপুর", "পাকুন্দিয়া", "কুলিয়ারচর", "বাজিতপুর", "অষ্টগ্রাম", "মিঠামইন", "করিমগঞ্জ", "ইটনা", "নিকলী"],
+                "নরসিংদী": ["নরসিংদী সদর", "বেলাবো", "মনোহরদী", "পলাশ", "রায়পুরা", "শিবপুর"]
+            },
+            "চট্টগ্রাম বিভাগ": {
+                "চট্টগ্রাম": ["আনোয়ারা", "বাঁশখালী", "বোয়ালখালী", "চন্দনাইশ", "ফটিকছড়ি", "হাটহাজারী", "লোহাগাড়া", "মীরসরাই", "পটিয়া", "রাঙ্গুনিয়া", "রাউজান", "সন্দ্বীপ", "সাতকানিয়া", "সীতাকুণ্ড", "কর্ণফুলী"],
+                "কক্সবাজার": ["কক্সবাজার সদর", "চকরিয়া", "কুতুবদিয়া", "উখিয়া", "মহেশখালী", "পেকুয়া", "রামু", "টেকনাফ"],
+                "কুমিল্লা": ["কুমিল্লা সদর", "বরুড়া", "ব্রাহ্মণপাড়া", "চান্দিনা", "চৌদ্দগ্রাম", "দাউদকান্দি", "দেবীদ্বার", "হোমনা", "লাকসাম", "মুরাদনগর", "নাঙ্গলকোট", "তিতাস", "মনোহরগঞ্জ", "মেঘনা", "সদর দক্ষিণ", "লালমাই"],
+                "নোয়াখালী": ["নোয়াখালী সদর", "বেগমগঞ্জ", "চাটখিল", "কোম্পানীগঞ্জ", "হাতিয়া", "সেনবাগ", "সুবর্ণচর", "কবিরহাট", "সোনাইমুড়ী"],
+                "ফেনী": ["ফেনী সদর", "ছাগলনাইয়া", "দাগনভূঞা", "পরশুরাম", "ফুলগাজী", "সোনাগাজী"],
+                "ব্রাহ্মণবাড়িয়া": ["ব্রাহ্মণবাড়িয়া সদর", "আখাউড়া", "বাঞ্ছারামপুর", "বanjবাড়ী", "কসবা", "নাসিরনগর", "সরাইল", "আশুগঞ্জ"],
+                "রাঙ্গামাটি": ["রাঙ্গামাটি সদর", "বাঘাইছড়ি", "বরকল", "জুরাছড়ি", "লংগদু", "নানিয়ারচর", "কাপ্তাই", "কাউখালী", "বিলাইছড়ি", "রাজস্থলী"],
+                "বান্দরবান": ["বান্দরবান সদর", "আলীকদম", "নাইক্ষ্যংছড়ি", "রোয়াংছড়ি", "রুমা", "লামা", "থানচি"],
+                "খাগড়াছড়ি": ["খাগড়াছড়ি সদর", "দিঘীনালা", "পানছড়ি", "লক্ষীছড়ি", "মহালছড়ি", "মানিকছড়ি", "রামগড়", "মাটিরাঙ্গা", "গুইমারা"]
+            },
+            "রাজশাহী বিভাগ": {
+                "রাজশাহী": ["রাজশাহী সদর", "বাগমারা", "বাগাতিপাড়া", "চারঘাট", "দুর্গাপুর", "গোদাগাড়ী", "মোহনপুর", "পবা", "পুঠিয়া", "তানোর"],
+                "নাটোর": ["নাটোর সদর", "বাগাতিপাড়া", "বড়াইগ্রাম", "গুরুদাসপুর", "লালপুর", "সিংড়া", "নলডাঙ্গা"],
+                "পাবনা": ["পাবনা সদর", "আটঘরিয়া", "বেড়া", "চাটমোহর", "ফরিদপুর", "ঈশ্বরদী", "ভাঙ্গুড়া", "সাঁথিয়া", "সুজানগর"],
+                "সিরাজগঞ্জ": ["সিরাজগঞ্জ সদর", "বেলকুচি", "চৌহালি", "কামারখন্দ", "কাজীপুর", "রায়গঞ্জ", "শাহজাদপুর", "তাড়াশ", "উল্লাপাড়া"],
+                "বগুড়া": ["বগুড়া সদর", "আদমদিঘী", "ধুনট", "দুপচাচিয়া", "গাবতলী", "কাহালু", "নন্দীগ্রাম", "সারিয়াকান্দি", "শাজাহানপুর", "শেরপুর", "সোনাতলা"],
+                "জয়পুরহাট": ["জয়পুরহাট সদর", "আক্কেলপুর", "কালাই", "ক্ষেতলাল", "পাঁচবিবি"],
+                "চাঁপাইনবাবগঞ্জ": ["চাঁপাইনবাবগঞ্জ সদর", "ভোলাহাট", "গোমস্তাপুর", "নাচোল", "শিবগঞ্জ"],
+                "নওগাঁ": ["নওগাঁ সদর", "আত্রাই", "বদলগাছী", "ধামইরহাট", "মহাদেবপুর", "মান্দা", "নিয়ামতপুর", "পত্নীতলা", "পোরশা", "রাণীনগর", "সাপাহার"]
+            },
+            "খুলনা বিভাগ": {
+                "খুলনা": ["খুলনা সদর", "দাকোপ", "ডুমুরিয়া", "তেরখাদা", "বটিয়াঘাটা", "ফুলতলা", "পাইকগাছা", "রূপসা", "কয়রা"],
+                "বাগেরহাট": ["বাগেরহাট সদর", "চিতলমারী", "ফকিরহাট", "কচুয়া", "মোল্লাহাট", "মোড়েলগঞ্জ", "রামপাল", "শরণখোলা"],
+                "সাতক্ষীরা": ["সাতক্ষীরা সদর", "আশাশুনি", "দেবহাটা", "কলারোয়া", "কালিগঞ্জ", "শ্যামনগর", "তালা"],
+                "যশোর": ["যশোর সদর", "অভয়নগর", "বাঘারপাড়া", "চৌগাছা", "ঝিকরগাছা", "কেশবপুর", "মনিরামপুর", "শার্শা"],
+                "ঝিনাইদহ": ["ঝিনাইদহ সদর", "হরিণাকুন্ডু", "কালীগঞ্জ", "কোটচাঁদপুর", "মহেশপুর", "শৈলকূপা"],
+                "মাগুরা": ["মাগুরা সদর", "মহম্মদপুর", "শালিখা", "শ্রীপুর"],
+                "কুষ্টিয়া": ["কুষ্টিয়া সদর", "কুমারখালী", "খোকসা", "মিরপুর", "দৌলতপুর", "ভেড়ামারা"],
+                "মেহেরপুর": ["মেহেরপুর সদর", "গাংনী", "মুজিবনগর"],
+                "চুয়াডাঙ্গা": ["চুয়াডাঙ্গা সদর", "আলমডাঙ্গা", "দামুড়হুদা", "জীবননগর"],
+                "নড়াইল": ["নড়াইল সদর", "কালিয়া", "লোহাগড়া"]
+            },
+            "বরিশাল বিভাগ": {
+                "বরিশাল": ["বরিশাল সদর", "বাকেরগঞ্জ", "বাবুগঞ্জ", "উজিরপুর", "বানারীপাড়া", "গৌরনদী", "আগৈলঝাড়া", "মেহেন্দিগঞ্জ", "মুলাদী", "হিজলা"],
+                "পটুয়াখালী": ["পটুয়াখালী সদর", "বাউফল", "দশমিনা", "দুমকি", "গলাচিপা", "কলাপাড়া", "মির্জাগঞ্জ", "রাঙ্গাবালী"],
+                "পিরোজপুর": ["পিরোজপুর সদর", "কাউখালী", "নাজিরপুর", "নেছারাবাদ", "ভান্ডারিয়া", "মঠবাড়িয়া", "ইন্দুরকানী"],
+                "ভোলা": ["ভোলা সদর", "বোরহানউদ্দিন", "চরফ্যাশন", "দৌলতখান", "লালমোহন", "তজুমদ্দিন", "মনপুরা"],
+                "ঝালকাঠি": ["ঝালকাঠি সদর", "কাঠালিয়া", "নলছিটি", "রাজাপুর"],
+                "বরগুনা": ["বরগুনা সদর", "আমতলী", "বেতাগী", "বামনা", "পাথরঘাটা", "তালতলী"]
+            },
+            "সিলেট বিভাগ": {
+                "সিলেট": ["সিলেট সদর", "বালাগঞ্জ", "বিয়ানীবাজার", "বিশ্বনাথ", "কোম্পানীগঞ্জ", "ফেঞ্চুগঞ্জ", "গোলাপগঞ্জ", "গোয়াইনঘাট", "জৈন্তাপুর", "কানাইঘাট", "সুনামগঞ্জ সদর", "দক্ষিণ সুরমা", "জকিগঞ্জ"],
+                "মৌলভীবাজার": ["মৌলভীবাজার সদর", "বড়লেখা", "জুড়ী", "কুলাউড়া", "কমলগঞ্জ", "রাজনগর", "শ্রীমঙ্গল"],
+                "হবিগঞ্জ": ["হবিগঞ্জ সদর", "আজমিরীগঞ্জ", "বাহুবল", "বানিয়াচং", "চুনারুঘাট", "দেবপাড়া", "লাখাই", "মাধবপুর", "নবীগঞ্জ"],
+                "সুনামগঞ্জ": ["সুনামগঞ্জ সদর", "বিশ্বম্ভরপুর", "ছাতক", "দক্ষিণ সুনামগঞ্জ", "দিরাই", "ধর্মপাশা", "জগন্নাথপুর", "জামালগঞ্জ", "তাহিরপুর", "শাল্লা", "দোয়ারাবাজার"]
+            },
+            "রংপুর বিভাগ": {
+                "রংপুর": ["রংপুর সদর", "বদরগঞ্জ", "গঙ্গাচড়া", "কাউনিয়া", "মিঠাপুকুর", "পীরগঞ্জ", "পীরগাছা", "তারাগঞ্জ"],
+                "দিনাজপুর": ["দিনাজপুর সদর", "বিরামপুর", "বিরল", "বোচাগঞ্জ", "চিরিরবন্দর", "ফুলবাড়ী", "ঘোড়াঘাট", "হাকিমপুর", "কাহারোল", "খানসামা", "নবাবগঞ্জ", "পার্বতীপুর"],
+                "গাইবান্ধা": ["গাইবан্ধা সদর", "ফুলছড়ি", "গোবিন্দগঞ্জ", "পলাশবাড়ী", "সাদুল্লাপুর", "সাঘাটা", "সুন্দরগঞ্জ"],
+                "কুড়িগ্রাম": ["কুড়িগ্রাম সদর", "ভুরুঙ্গামারী", "চিলমারী", "ফুলবাড়ী", "নাগেশ্বরী", "রাজারহাট", "উলিপুর", "চর রাজিবপুর"],
+                "লালমনিরহাট": ["লালমনিরহাট সদর", "আদিতমারী", "হাতীবান্ধা", "কালীগঞ্জ", "পাটগ্রাম"],
+                "নীলফামারী": ["নীলফামারী সদর", "ডিমলা", "ডোমার", "জলঢাকা", "কিশোরগঞ্জ", "সৈয়দপুর"],
+                "পঞ্চগড়": ["পঞ্চগড় সদর", "আটোয়ারী", "বোদা", "দেবীগঞ্জ", "তেতুলিয়া"],
+                "ঠাকুরগাঁও": ["ঠাকুরগাঁও সদর", "বালিয়াডাঙ্গী", "হরিপুর", "পীরগঞ্জ", "রাণীশংকৈল"]
+            },
+            "ময়মনসিংহ বিভাগ": {
+                "ময়মনসিংহ": ["ময়মনসিংহ সদর", "ভালুকা", "ধোবাউড়া", "ফুলবাড়ীয়া", "গফরগাঁও", "গৌরীপুর", "হালুয়াঘাট", "ঈশ্বরগঞ্জ", "মুক্তাগাছা", "নান্দাইল", "ফুলপুর", "ত্রিশাল", "তারাকান্দা"],
+                "জামালপুর": ["জামালপুর সদর", "বকশীগঞ্জ", "দেওয়ানগঞ্জ", "ইসলামপুর", "মাদারগঞ্জ", "মেলান্দহ", "সরিষাবাড়ী"],
+                "শেরপুর": ["শেরপুর সদর", "ঝিনাইগাতী", "নকলা", "নালিতাবাড়ী", "শ্রীবরদী"],
+                "নেত্রকোণা": ["নেত্রকোণা সদর", "আটপাড়া", "বারহাট্টা", "দুর্গাপুর", "কলমাকান্দা", "কেন্দুয়া", "মদন", "মোহনগঞ্জ", "পূর্বধলা", "খালিয়াজুরী"]
+            }
+        };
+
+        const divisionSelect = document.getElementById('division');
+        const jelaSelect = document.getElementById('jela');
+        const upojelaSelect = document.getElementById('upojela');
+        const selectedDivision = document.getElementById('selectedDivision');
+        const selectedDistrict = document.getElementById('selectedDistrict');
+        const selectedUpazila = document.getElementById('selectedUpazila');
+        const passwordError = document.getElementById('passwordError');
+
+        /* বিভাগ লিস্ট */
+        for(let div in bangladeshData){
+            let opt = document.createElement('option');
+            opt.value = div;
+            opt.textContent = div;
+            divisionSelect.appendChild(opt);
+        }
+
+        /* বিভাগ পরিবর্তন হলে জেলা আপডেট */
+        divisionSelect.addEventListener('change', function(){
+            const div = this.value;
+            selectedDivision.textContent = "নির্বাচিত বিভাগ: " + (div || "নেই");
+            jelaSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
+            upojelaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
+            selectedDistrict.textContent = "নির্বাচিত জেলা: নেই";
+            selectedUpazila.textContent = "নির্বাচিত উপজেলা: নেই";
+            
+            if(div && bangladeshData[div]){
+                jelaSelect.disabled = false;
+                for(let jela in bangladeshData[div]){
+                    let o = document.createElement('option');
+                    o.value = jela;
+                    o.textContent = jela;
+                    jelaSelect.appendChild(o);
+                }
+            } else {
+                jelaSelect.disabled = true;
+                upojelaSelect.disabled = true;
+            }
+        });
+
+        /* জেলা পরিবর্তন হলে উপজেলা আপডেট */
+        jelaSelect.addEventListener('change', function(){
+            const div = divisionSelect.value;
+            const jela = this.value;
+            selectedDistrict.textContent = "নির্বাচিত জেলা: " + (jela || "নেই");
+            upojelaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
+            selectedUpazila.textContent = "নির্বাচিত উপজেলা: নেই";
+            
+            if(div && jela && bangladeshData[div][jela]){
+                upojelaSelect.disabled = false;
+                bangladeshData[div][jela].forEach(u => {
+                    let o = document.createElement('option');
+                    o.value = u;
+                    o.textContent = u;
+                    upojelaSelect.appendChild(o);
+                });
+            } else {
+                upojelaSelect.disabled = true;
+            }
+        });
+
+        upojelaSelect.addEventListener('change', function(){
+            selectedUpazila.textContent = "নির্বাচিত উপজেলা: " + (this.value || "নেই");
+        });
+
+        // পাসওয়ার্ড মিলছে কিনা তা চেক করা
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            
+            if (password !== confirmPassword) {
+                passwordError.textContent = "পাসওয়ার্ড মেলেনি!";
+            } else {
+                passwordError.textContent = "";
+            }
+        });
+
+        /* ================== SIGNUP ================== */
+        document.getElementById('signupForm').addEventListener('submit', function(e){
+            e.preventDefault();
+            const fullname = document.getElementById('fullname').value;
+            const age = document.getElementById('age').value;
+            const division = divisionSelect.value;
+            const district = jelaSelect.value;
+            const upazila = upojelaSelect.value;
+            const bloodGroup = document.getElementById('bloodGroup').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if(password !== confirmPassword){
+                alert("পাসওয়ার্ড মেলেনি!");
+                return;
+            }
+            
+            firebase.database().ref('donors').get().then(snapshot => {
+                const users = snapshot.exists() ? snapshot.val() : {};
+                for(let key in users){
+                    if(users[key].phone === phone){
+                        alert("এই ফোন নম্বর ইতিমধ্যে ব্যবহৃত হয়েছে!");
+                        return;
+                    }
+                    if(email && users[key].email === email){
+                        alert("এই ইমেইল ইতিমধ্যে ব্যবহৃত হয়েছে!");
+                        return;
+                    }
+                }
+                
+                const userId = phone;
+                firebase.database().ref('donors/' + userId).set({
+                    fullname, age, division, district, upazila, bloodGroup, phone, email, password
+                }).then(() => {
+                    alert("সাইনআপ সম্পন্ন এবং ডাটা সেভ হয়েছে!");
+                    this.reset();
+                    selectedDivision.textContent = "নির্বাচিত বিভাগ: নেই";
+                    selectedDistrict.textContent = "নির্বাচিত জেলা: নেই";
+                    selectedUpazila.textContent = "নির্বাচিত উপজেলা: নেই";
+                    jelaSelect.disabled = true;
+                    upojelaSelect.disabled = true;
+                }).catch(err => {
+                    console.error(err);
+                    alert("ডাটা সেভ করতে সমস্যা: " + err.message);
+                });
+            }).catch(err => {
+                console.error(err);
+                alert("ত্রুটি: " + err.message);
+            });
+        });
+
+        /* ================== LOGIN ================== */
+        document.getElementById('loginForm').addEventListener('submit', function(e){
+            e.preventDefault();
+            const loginId = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            firebase.database().ref('donors').get().then(snapshot => {
+                if(snapshot.exists()){
+                    const users = snapshot.val();
+                    let found = null;
+                    for(let key in users){
+                        if(users[key].phone === loginId || users[key].email === loginId){
+                            found = users[key];
+                            break;
+                        }
+                    }
+                    
+                    if(found){
+                        if(found.password === password){
+                            alert("লগইন সফল!");
+                            localStorage.setItem('donorData', JSON.stringify(found));
+                            window.location.href = "dashboard.html";
+                        } else {
+                            alert("পাসওয়ার্ড ভুল!");
+                        }
+                    } else {
+                        alert("ইউজার পাওয়া যায়নি!");
+                    }
+                } else {
+                    alert("কোন ডাটা পাওয়া যায়নি!");
+                }
+            }).catch(err => {
+                console.error(err);
+                alert("ত্রুটি: " + err.message);
+            });
+        });
+    </script>
+</body>
+</html>
