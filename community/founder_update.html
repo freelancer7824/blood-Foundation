@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Founder Setup</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+  body{font-family:'Noto Sans Bengali',sans-serif;background:#f5f5f5;padding:20px;}
+  .container{max-width:500px;margin:50px auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.1);}
+  h2{text-align:center;margin-bottom:20px;color:#b71c1c;}
+  label{display:block;margin-top:15px;margin-bottom:5px;font-weight:600;}
+  input[type="text"], textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;}
+  textarea{resize:none;}
+  input[type="file"]{margin-top:5px;}
+  button{margin-top:20px;padding:12px 20px;background:#d32f2f;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;width:100%;}
+  button:hover{background:#b71c1c;}
+  .preview{margin-top:15px;text-align:center;}
+  .preview img{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #d32f2f;}
+  .success-msg{margin-top:15px;color:green;font-weight:600;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Founder Information Setup</h2>
+  
+  <label for="founderName">Founder Name</label>
+  <input type="text" id="founderName" placeholder="প্রতিষ্ঠাতার নাম লিখুন">
+
+  <label for="founderDescription">Description</label>
+  <textarea id="founderDescription" rows="4" placeholder="Founder সম্পর্কে তথ্য লিখুন"></textarea>
+
+  <label for="founderContact">Contact Number</label>
+  <input type="text" id="founderContact" placeholder="০১XXXXXXXXX">
+
+  <label for="founderImage">Upload Image</label>
+  <input type="file" id="founderImage" accept="image/*">
+  
+  <div class="preview" id="imagePreview"></div>
+  
+  <button id="saveFounder">Save Founder Info</button>
+  <div class="success-msg" id="successMsg"></div>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+    authDomain: "earn-project-5f892.firebaseapp.com",
+    databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+    projectId: "earn-project-5f892",
+    storageBucket: "earn-project-5f892.appspot.com",
+    messagingSenderId: "8457886057",
+    appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const founderName = document.getElementById('founderName');
+  const founderDescription = document.getElementById('founderDescription');
+  const founderContact = document.getElementById('founderContact');
+  const founderImage = document.getElementById('founderImage');
+  const saveBtn = document.getElementById('saveFounder');
+  const imagePreview = document.getElementById('imagePreview');
+  const successMsg = document.getElementById('successMsg');
+
+  let uploadedImageURL = "";
+
+  // Preview selected image locally
+  founderImage.addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Auto-load saved founder info
+  db.ref('founderInformation').once('value').then(snapshot=>{
+    const data = snapshot.val();
+    if(data){
+      founderName.value = data.name || "";
+      founderDescription.value = data.description || "";
+      founderContact.value = data.contact || "";
+      if(data.image){
+        uploadedImageURL = data.image;
+        imagePreview.innerHTML = `<img src="${uploadedImageURL}" alt="Founder Image">`;
+      }
+    }
+  });
+
+  // Save info
+  saveBtn.addEventListener('click', async ()=>{
+    const name = founderName.value.trim();
+    const description = founderDescription.value.trim();
+    const contact = founderContact.value.trim();
+    const file = founderImage.files[0];
+
+    if(!name || !description || !contact){
+      alert("সব ফিল্ড পূরণ করুন!");
+      return;
+    }
+
+    // Upload image to Cloudinary if new file selected
+    if(file){
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "Rosenews"); // <-- Replace with your unsigned preset
+      try{
+        const res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
+          method:"POST",
+          body: formData
+        });
+        const data = await res.json();
+        uploadedImageURL = data.secure_url;
+        imagePreview.innerHTML = `<img src="${uploadedImageURL}" alt="Founder Image">`;
+      } catch(err){
+        console.error(err);
+        alert("Image upload failed!");
+        return;
+      }
+    }
+
+    // Save to Firebase
+    db.ref('founderInformation').set({
+      name,
+      description,
+      contact,
+      image: uploadedImageURL
+    }).then(()=>{
+      successMsg.innerText = "Founder information saved successfully!";
+    }).catch(err=>{
+      console.error(err);
+      alert("Failed to save data!");
+    });
+  });
+</script>
+
+</body>
+</html>

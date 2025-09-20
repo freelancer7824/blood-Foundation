@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>সেটিংস</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Noto Sans Bengali', sans-serif;
+        background: linear-gradient(135deg,#f8f9fa,#e0e7ff);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 40px;
+        font-weight: 600;
+    }
+
+    .btn-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 90%;
+        max-width: 400px;
+    }
+
+    .setting-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-decoration: none;
+        background: #4f46e5;
+        color: #fff;
+        padding: 18px 20px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .setting-btn i {
+        font-size: 1.3rem;
+    }
+
+    .setting-btn:hover {
+        background: #4338ca;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+    }
+
+    /* Responsive */
+    @media (max-width:500px) {
+        h1 { font-size: 1.5rem; margin-bottom: 30px; }
+        .setting-btn { font-size: 1.1rem; padding: 15px; }
+    }
+</style>
+</head>
+<body>
+
+    <h1>সেটিংস</h1>
+
+    <div class="btn-container">
+        <a href="druto_contact_admin.html" class="setting-btn">
+            <i class="fas fa-phone-alt"></i> জরুরি যোগাযোগ
+        </a>
+        <a href="contact_change_admin.html" class="setting-btn">
+            <i class="fas fa-info-circle"></i> তথ্য
+        </a>
+        <a href="hero_setting.html" class="setting-btn">
+            <i class="fas fa-star"></i> হিরো সেকশন
+        </a>
+    </div>
+
+</body>
+</html>

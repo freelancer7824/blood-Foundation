@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>সংগঠনের তথ্য - Admin Panel</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body{background:#f9f9f9;font-family:'Noto Sans Bengali',sans-serif;}
+    h1{text-align:center;color:#198754;margin:30px 0;}
+    .info-card{
+        background:white;border-radius:10px;padding:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;
+    }
+    .info-card img{width:80px;height:80px;object-fit:cover;border-radius:50%;margin-bottom:10px;}
+    .btn-edit{margin-right:5px;}
+    .form-control, .btn, .form-select{margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<div class="container my-4">
+    <h1>Admin Panel</h1>
+
+    <!-- Section Selector -->
+    <div class="mb-4">
+        <select class="form-select" id="sectionSelect">
+            <option value="">সেকশন নির্বাচন করুন</option>
+            <option value="executive">কার্যনির্বাহী কমিটি</option>
+            <option value="advisory">উপদেষ্টা পরিষদ</option>
+            <option value="responsible">দায়িত্বপ্রাপ্ত ব্যক্তি</option>
+            <option value="org">সহযোগী প্রতিষ্ঠান</option>
+            <option value="journalist">সিনিয়র সাংবাদিক</option>
+            <option value="doctor">মানবিক ডাক্তার</option>
+            <option value="clinic">মানবিক ক্লিনিক</option>
+            <option value="donor">স্থায়ী দাতা সদস্য</option>
+        </select>
+    </div>
+
+    <!-- Add/Edit Form -->
+    <div class="card p-3 mb-4" id="formCard" style="display:none;">
+        <h5 id="formTitle">Add New</h5>
+        <input type="text" id="name" class="form-control" placeholder="নাম">
+        <input type="text" id="role" class="form-control" placeholder="পদবি / ভূমিকা">
+        <input type="text" id="address" class="form-control" placeholder="ঠিকানা">
+        <input type="text" id="contact" class="form-control" placeholder="ফোন / ইমেইল">
+        <input type="date" id="joinDate" class="form-control" placeholder="Join Date">
+        <select class="form-select" id="bloodGroup">
+            <option value="">রক্তের গ্রুপ নির্বাচন করুন</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+        </select>
+        <textarea class="form-control" id="remarks" placeholder="Remarks / অন্যান্য তথ্য"></textarea>
+        <input type="file" id="photo" class="form-control">
+        <button class="btn btn-success" id="saveBtn">Save</button>
+        <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+    </div>
+
+    <!-- Data Display -->
+    <div id="dataContainer" class="row"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Cloudinary Upload Function
+async function uploadImage(file){
+    if(!file) return null;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "Rosenews");
+    const res = await fetch("https://api.cloudinary.com/v1_1/dhvtgzy5x/image/upload", {
+        method: "POST",
+        body: formData
+    });
+    const data = await res.json();
+    return data.secure_url;
+}
+
+// Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+    authDomain: "earn-project-5f892.firebaseapp.com",
+    databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+    projectId: "earn-project-5f892",
+    storageBucket: "earn-project-5f892.firebasestorage.app",
+    messagingSenderId: "8457886057",
+    appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let currentSection = "";
+let editId = null;
+
+// Elements
+const sectionSelect = document.getElementById('sectionSelect');
+const formCard = document.getElementById('formCard');
+const formTitle = document.getElementById('formTitle');
+const saveBtn = document.getElementById('saveBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const dataContainer = document.getElementById('dataContainer');
+
+const nameInput = document.getElementById('name');
+const roleInput = document.getElementById('role');
+const addressInput = document.getElementById('address');
+const contactInput = document.getElementById('contact');
+const joinDateInput = document.getElementById('joinDate');
+const bloodGroupInput = document.getElementById('bloodGroup');
+const remarksInput = document.getElementById('remarks');
+const photoInput = document.getElementById('photo');
+
+sectionSelect.addEventListener('change', ()=>{
+    currentSection = sectionSelect.value;
+    if(!currentSection) return;
+    formCard.style.display = 'block';
+    formTitle.textContent = "Add New";
+    editId = null;
+    loadData();
+});
+
+cancelBtn.addEventListener('click', ()=>{
+    formTitle.textContent = "Add New";
+    nameInput.value = roleInput.value = addressInput.value = contactInput.value = joinDateInput.value = remarksInput.value = "";
+    bloodGroupInput.value = "";
+    photoInput.value = "";
+    editId = null;
+});
+
+saveBtn.addEventListener('click', async ()=>{
+    const name = nameInput.value.trim();
+    const role = roleInput.value.trim();
+    const address = addressInput.value.trim();
+    const contact = contactInput.value.trim();
+    const joinDate = joinDateInput.value;
+    const bloodGroup = bloodGroupInput.value;
+    const remarks = remarksInput.value.trim();
+    const file = photoInput.files[0];
+
+    if(!name){ alert("নাম দিতে হবে!"); return; }
+
+    const photoUrl = await uploadImage(file);
+    const dataObj = {name, role, address, contact, joinDate, bloodGroup, remarks, photo: photoUrl || ""};
+
+    if(editId){
+        const docRef = doc(db, currentSection, editId);
+        await updateDoc(docRef, dataObj);
+        alert("Updated Successfully!");
+    } else {
+        await addDoc(collection(db, currentSection), dataObj);
+        alert("Added Successfully!");
+    }
+
+    nameInput.value = roleInput.value = addressInput.value = contactInput.value = joinDateInput.value = remarksInput.value = "";
+    bloodGroupInput.value = "";
+    photoInput.value = "";
+    editId = null;
+    loadData();
+});
+
+async function loadData(){
+    dataContainer.innerHTML = "";
+    if(!currentSection) return;
+    const snap = await getDocs(collection(db, currentSection));
+    if(snap.empty){
+        dataContainer.innerHTML = `<div class="col-12"><div class="info-card text-center">ডাটা পাওয়া যায়নি</div></div>`;
+        return;
+    }
+    snap.forEach(docItem=>{
+        const data = docItem.data();
+        const card = document.createElement('div');
+        card.classList.add('col-md-4');
+        card.innerHTML = `
+            <div class="info-card">
+                ${data.photo?`<img src="${data.photo}">`:''}
+                <h5>${data.name}</h5>
+                ${data.role?`<p><strong>পদবি:</strong> ${data.role}</p>`:''}
+                ${data.address?`<p><strong>ঠিকানা:</strong> ${data.address}</p>`:''}
+                ${data.contact?`<p><strong>ফোন / ইমেইল:</strong> ${data.contact}</p>`:''}
+                ${data.joinDate?`<p><strong>Join Date:</strong> ${data.joinDate}</p>`:''}
+                ${data.bloodGroup?`<p><strong>রক্ত গ্রুপ:</strong> ${data.bloodGroup}</p>`:''}
+                ${data.remarks?`<p><strong>Remarks:</strong> ${data.remarks}</p>`:''}
+                <button class="btn btn-sm btn-primary btn-edit">Edit</button>
+                <button class="btn btn-sm btn-danger btn-delete">Delete</button>
+            </div>
+        `;
+        card.querySelector('.btn-edit').addEventListener('click', ()=>{
+            editId = docItem.id;
+            formTitle.textContent = "Edit";
+            nameInput.value = data.name || "";
+            roleInput.value = data.role || "";
+            addressInput.value = data.address || "";
+            contactInput.value = data.contact || "";
+            joinDateInput.value = data.joinDate || "";
+            bloodGroupInput.value = data.bloodGroup || "";
+            remarksInput.value = data.remarks || "";
+        });
+        card.querySelector('.btn-delete').addEventListener('click', async ()=>{
+            if(confirm("আপনি কি নিশ্চিত?")){
+                await deleteDoc(doc(db,currentSection,docItem.id));
+                alert("Deleted Successfully!");
+                loadData();
+            }
+        });
+        dataContainer.appendChild(card);
+    });
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
