@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Extra Options</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+body{font-family:'Noto Sans Bengali',sans-serif;background:#f4f6f8;margin:0;padding:0;}
+.container{max-width:800px;margin:60px auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+h1{text-align:center;margin-bottom:20px;}
+input, button{padding:10px;margin:5px 0;font-size:16px;}
+input{width:calc(100% - 24px);}
+button{cursor:pointer;}
+.option-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;}
+.option-item span{flex:1;}
+.option-item button{margin-left:10px;background:#ff6b6b;color:#fff;border:none;padding:6px 10px;border-radius:4px;}
+.option-item button.edit{background:#1dd1a1;}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Admin Panel - Extra Options</h1>
+
+  <h3>নতুন অপশন যোগ করুন</h3>
+  <input type="text" id="optionName" placeholder="Option Name">
+  <input type="text" id="optionLink" placeholder="Option Link (example.html)">
+  <button onclick="addOption()">যোগ করুন</button>
+
+  <h3>সকল অপশন</h3>
+  <div id="optionsList"></div>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+    authDomain: "earn-project-5f892.firebaseapp.com",
+    databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+    projectId: "earn-project-5f892",
+    storageBucket: "earn-project-5f892.firebasestorage.app",
+    messagingSenderId: "8457886057",
+    appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const optionsList = document.getElementById('optionsList');
+  const optionName = document.getElementById('optionName');
+  const optionLink = document.getElementById('optionLink');
+
+  // Load options from Firebase
+  function loadOptions(){
+    db.ref('extraOptions').once('value').then(snapshot=>{
+      const data = snapshot.val();
+      optionsList.innerHTML = '';
+      if(data){
+        Object.keys(data).forEach(key=>{
+          const opt = data[key];
+          const div = document.createElement('div');
+          div.classList.add('option-item');
+          div.innerHTML = `
+            <span>${opt.name} → ${opt.link}</span>
+            <button class="edit" onclick="editOption('${key}')">Edit</button>
+            <button onclick="deleteOption('${key}')">Delete</button>
+          `;
+          optionsList.appendChild(div);
+        });
+      } else {
+        optionsList.innerHTML = '<p>কোনো অপশন নেই</p>';
+      }
+    });
+  }
+
+  // Add option
+  function addOption(){
+    const name = optionName.value.trim();
+    const link = optionLink.value.trim();
+    if(!name || !link){ alert('সব ফিল্ড পূরণ করুন'); return; }
+
+    const newKey = db.ref('extraOptions').push().key;
+    db.ref('extraOptions/' + newKey).set({name, link})
+      .then(()=>{ 
+        optionName.value=''; optionLink.value='';
+        loadOptions();
+      });
+  }
+
+  // Edit option
+  function editOption(key){
+    db.ref('extraOptions/' + key).once('value').then(snapshot=>{
+      const opt = snapshot.val();
+      const newName = prompt('নতুন নাম লিখুন', opt.name);
+      const newLink = prompt('নতুন লিঙ্ক লিখুন', opt.link);
+      if(newName && newLink){
+        db.ref('extraOptions/' + key).update({name:newName, link:newLink})
+          .then(()=>loadOptions());
+      }
+    });
+  }
+
+  // Delete option
+  function deleteOption(key){
+    if(confirm('আপনি কি নিশ্চিত ডিলিট করতে চান?')){
+      db.ref('extraOptions/' + key).remove().then(()=>loadOptions());
+    }
+  }
+
+  loadOptions();
+</script>
+</body>
+</html>
