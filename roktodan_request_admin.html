@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>রক্তদান - Admin Dashboard</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+  :root{
+    --primary:#1976d2;
+    --danger:#b71c1c;
+    --muted:#6b7280;
+    --card-bg:#ffffff;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Noto Sans Bengali',sans-serif;}
+  body{background:#f4f7fb;color:#111;min-height:100vh;}
+  
+  /* Navbar */
+  .navbar{height:60px;background:var(--primary);display:flex;align-items:center;gap:8px;padding:6px 14px;color:#fff;position:sticky;top:0;z-index:1200;}
+  .navbar h1{font-size:18px;font-weight:700;}
+  .navbar button{margin-left:auto;}
+
+  /* Container */
+  .container{max-width:1100px;margin:20px auto;padding:16px;}
+
+  /* Filters */
+  .filters-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .filters-row select,
+  .filters-row input,
+  .filters-row button{
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:8px;
+    border:1px solid #e6eef9;
+    background:#fff;
+  }
+
+  /* Buttons */
+  .confirm-btn{background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;}
+  .confirm-btn:hover{background:#155a9c;}
+  .reject-btn{background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;}
+  .reject-btn:hover{background:#8e1a1a;}
+
+  /* Cards */
+  .card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06);
+  }
+  .admin-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+
+  /* Status Pills */
+  .status-pill{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:999px;
+    font-weight:600;
+    font-size:13px;
+  }
+  .status-pending{background:#fff2cc;color:#8a5d00;border:1px solid #ffe5a3;}
+  .status-confirmed{background:#e6ffef;color:#046a3b;border:1px solid #bff7d0;}
+  .status-rejected{background:#ffecec;color:#7a1515;border:1px solid #f4b6b6;}
+  .pulse {animation: pulse 2s infinite; border-radius:999px;}
+  @keyframes pulse {
+    0%{box-shadow:0 0 0 0 rgba(255,193,7,0.18);}
+    70%{box-shadow:0 0 0 10px rgba(255,193,7,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,193,7,0);}
+  }
+  .muted{color:var(--muted);font-size:13px;}
+
+  /* Responsive Filters */
+  @media (max-width:600px){
+    .filters-row select,
+    .filters-row input,
+    .filters-row button{
+      flex:1 1 48%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h1><i class="fa-solid fa-cogs"></i> Admin Dashboard</h1>
+  <button onclick="logout()" class="confirm-btn">Logout</button>
+</div>
+
+<div class="container">
+  <div class="filters-row">
+    <select id="filterDistrict"><option value="">সকল জেলা</option></select>
+    <select id="filterUpazila"><option value="">সকল উপজেলা</option></select>
+    <select id="filterBlood"><option value="">সকল রক্ত গ্রুপ</option></select>
+    <select id="filterStatus">
+      <option value="">সকল স্ট্যাটাস</option>
+      <option value="pending">Pending</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <button class="confirm-btn" id="applyFiltersBtn">Apply Filter</button>
+  </div>
+
+  <div id="adminRequestsList">
+    <div class="muted">লোড হচ্ছে...</div>
+  </div>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+    authDomain: "earn-project-5f892.firebaseapp.com",
+    databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+    projectId: "earn-project-5f892",
+    storageBucket: "earn-project-5f892.firebasestorage.app",
+    messagingSenderId: "8457886057",
+    appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const adminEmail = "admincontrol@gmail.com";
+  const donorData = JSON.parse(localStorage.getItem('donorData'));
+  if(!donorData || donorData.email !== adminEmail){
+    alert("আপনি admin নন বা লগইন করা নেই!");
+    window.location.href = "login.html";
+  }
+
+  const filterDistrict = document.getElementById('filterDistrict');
+  const filterUpazila = document.getElementById('filterUpazila');
+  const filterBlood = document.getElementById('filterBlood');
+  const filterStatus = document.getElementById('filterStatus');
+  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  const adminRequestsList = document.getElementById('adminRequestsList');
+
+  function logout(){
+    localStorage.removeItem('donorData');
+    window.location.href = "login.html";
+  }
+
+  function formatDate(iso){
+    try { return new Date(iso).toLocaleString(); } catch(e){ return iso; }
+  }
+
+  // শেষ রক্তদানের পর কত দিন হয়েছে – হিসাব
+  function daysSince(dateString){
+    if(!dateString) return "তথ্য নেই";
+    const last = new Date(dateString);
+    const today = new Date();
+    const diff = today - last;
+    const days = Math.floor(diff / (1000*60*60*24));
+    return days + " দিন আগে";
+  }
+
+  function populateAdminFilters(){
+    db.ref('requests').once('value').then(snapshot=>{
+      const districts = new Set(), upazilas = new Set(), bloods = new Set();
+      snapshot.forEach(snap=>{
+        const r = snap.val();
+        if(r.district) districts.add(r.district);
+        if(r.upazila) upazilas.add(r.upazila);
+        if(r.bloodGroup) bloods.add(r.bloodGroup);
+      });
+      districts.forEach(d=>filterDistrict.innerHTML += `<option value="${d}">${d}</option>`);
+      upazilas.forEach(u=>filterUpazila.innerHTML += `<option value="${u}">${u}</option>`);
+      bloods.forEach(b=>filterBlood.innerHTML += `<option value="${b}">${b}</option>`);
+    });
+  }
+
+  function renderAdminRequests(){
+    adminRequestsList.innerHTML = "<div class='muted'>লোড হচ্ছে...</div>";
+    db.ref('requests').once('value').then(snapshot=>{
+      adminRequestsList.innerHTML = "";
+      let countPending = 0;
+      snapshot.forEach(snap=>{
+        const r = snap.val(); r._key = snap.key;
+        if(filterDistrict.value && r.district !== filterDistrict.value) return;
+        if(filterUpazila.value && r.upazila !== filterUpazila.value) return;
+        if(filterBlood.value && r.bloodGroup !== filterBlood.value) return;
+        if(filterStatus.value && r.status !== filterStatus.value) return;
+
+        const div = document.createElement('div');
+        div.className = 'card';
+
+        // ডোনারের lastDonateDate আনতে donors টেবিল থেকে পড়া
+        db.ref('donors/'+r.userId).once('value').then(uSnap=>{
+          const u = uSnap.val() || {};
+          const lastDonateInfo = u.lastDonateDate ? daysSince(u.lastDonateDate) : "তথ্য নেই";
+
+          div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-weight:700">${r.fullname} — ${r.phone}</div>
+              <div class="muted">${r.bloodGroup} • ${r.district}/${r.upazila}</div>
+              <div class="muted">শেষ রক্তদান: ${lastDonateInfo}</div>
+              <div style="margin-top:8px"><small>Request: ${formatDate(r.requestDate)}</small></div>
+            </div>
+            <div style="text-align:right">
+              <div style="margin-bottom:8px"><span class="status-pill ${r.status==='pending'?'status-pending pulse':r.status==='confirmed'?'status-confirmed':'status-rejected'}">${r.status}</span></div>
+            </div>
+          </div>`;
+
+          if(r.status==='pending'){
+            countPending++;
+            const btnWrap = document.createElement('div');
+            btnWrap.className='admin-actions';
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className='confirm-btn'; confirmBtn.innerText='Confirm';
+            confirmBtn.addEventListener('click', ()=>{
+              const confirmDate = new Date().toISOString();
+              db.ref('requests/'+r._key).update({status:'confirmed', confirmedDate:confirmDate}).then(()=>{
+                db.ref('donors/'+r.userId).once('value').then(uSnap=>{
+                  const u = uSnap.val()||{};
+                  db.ref('donors/'+r.userId).update({
+                    lastDonateDate:confirmDate,
+                    totalDonations:(u.totalDonations||0)+1
+                  });
+                  renderAdminRequests();
+                });
+              });
+            });
+            const rejectBtn = document.createElement('button');
+            rejectBtn.className='reject-btn'; rejectBtn.innerText='Reject';
+            rejectBtn.addEventListener('click', ()=>{
+              db.ref('requests/'+r._key).update({status:'rejected'}).then(renderAdminRequests);
+            });
+            btnWrap.appendChild(confirmBtn); btnWrap.appendChild(rejectBtn);
+            div.appendChild(btnWrap);
+          }
+
+          adminRequestsList.appendChild(div);
+        });
+      });
+      if(countPending===0 && adminRequestsList.innerHTML.trim()==="") adminRequestsList.innerHTML="<div class='muted'>কোনো রিকোয়েস্ট পাওয়া যায়নি।</div>";
+    });
+  }
+
+  applyFiltersBtn.addEventListener('click', renderAdminRequests);
+
+  populateAdminFilters();
+  renderAdminRequests();
+</script>
+</body>
+</html>
