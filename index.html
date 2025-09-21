@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ইসলামি ব্লাড ফাউন্ডেশন</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+body{background:#f4f6f8; color:#333;}
+
+/* ===== Navbar ===== */
+.navbar{
+  height:60px;
+  background:#ffffff;  /* white theme */
+  color:#333333;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:1000;
+  box-shadow:0 4px 8px rgba(0,0,0,0.05);
+}
+.navbar h1{
+  font-size:22px; display:flex; align-items:center; gap:10px;
+}
+.navbar img.logo{
+  height:35px;
+  width:auto;
+  border-radius:5px;
+}
+.menu-btn{font-size:28px; cursor:pointer; display:none; color:#333;}
+
+/* ===== Sidebar ===== */
+.sidebar{
+  position:fixed;
+  top:60px; left:0;
+  width:220px;
+  height:calc(100vh - 60px);
+  background:#ffffff;  /* white sidebar */
+  color:#333;
+  padding-top:20px;
+  transition:0.3s;
+  overflow-y:auto;
+  z-index:999;
+  border-right:1px solid #e0e0e0;
+}
+.sidebar a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#333;
+  padding:12px 20px;
+  text-decoration:none;
+  margin:5px 0;
+  border-left:4px solid transparent;
+  border-radius:4px;
+  transition:all 0.3s ease;
+  font-size:16px;
+  cursor:pointer;
+}
+.sidebar a:hover{
+  background:#f0f0f0;
+  border-left:4px solid #ff6b6b;
+}
+.sidebar a.active{
+  background:#f0f0f0;
+  border-left:4px solid #ff6b6b;
+  font-weight:600;
+}
+.dropdown-content{
+  display:none;
+  flex-direction:column;
+  padding-left:20px;
+  background:#ffffff;
+  border-radius:4px;
+}
+.dropdown-content a{
+  padding:10px 20px;
+  margin:0;
+  font-size:15px;
+  color:#333;
+}
+.dropdown-content a:hover{
+  background:#f0f0f0;
+  border-left:4px solid #ff6b6b;
+}
+
+/* ===== Responsive ===== */
+@media(max-width:768px){
+  .menu-btn{display:block;}
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.show{transform:translateX(0);}
+  .overlay{
+    display:none;
+    position:fixed;
+    top:60px; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.2);
+    z-index:998;
+  }
+  .overlay.active{display:block;}
+}
+.main-content{
+  margin-top:60px;
+  margin-left:220px;
+  transition:0.3s;
+}
+@media(max-width:768px){
+  .main-content{margin-left:0;}
+}
+iframe{width:100%;height:calc(100vh - 60px);border:none; background:#ffffff;}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <span class="menu-btn" onclick="toggleSidebar()">&#9776;</span>
+  <h1>
+    <img src="logo.png" class="logo" alt="Logo">
+    ইসলামি ব্লাড ফাউন্ডেশন
+  </h1>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <a id="homeLink">
+    <i class="fas fa-home"></i> হোম
+    <span style="margin-left:auto;"><i class="fas fa-caret-down"></i></span>
+  </a>
+  <div class="dropdown-content" id="dropdownContent"></div>
+  
+  <!-- রক্ত দিন অপশন মুছে ফেলা হয়েছে -->
+  <a href="#" onclick="loadPage('services.html', this)"><i class="fas fa-concierge-bell"></i> সার্ভিসেস</a>
+  <a href="#" onclick="loadPage('contact.html', this)"><i class="fas fa-envelope"></i> যোগাযোগ</a>
+  
+  <a href="#" onclick="loadPage('need_donate.html', this)"><i class="fas fa-heart"></i> রক্ত নিন</a>
+  
+  <!-- Added Community option -->
+  <a href="#" onclick="loadPage('/community/company.html', this)"><i class="fas fa-users"></i> কমিউনিটি</a>
+  <!-- নতুন সেকশন -->
+<a id="extraOptionsLink">
+  <i class="fas fa-list"></i> এক্সট্রা অপশন
+  <span style="margin-left:auto;"><i class="fas fa-caret-down"></i></span>
+</a>
+<div class="dropdown-content" id="extraOptionsContent"></div>
+</div>
+
+<!-- Main content -->
+<div class="main-content">
+  <iframe name="contentFrame" id="contentFrame"></iframe>
+</div>
+
+<!-- Firebase App (core SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+  apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+  authDomain: "earn-project-5f892.firebaseapp.com",
+  databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+  projectId: "earn-project-5f892",
+  storageBucket: "earn-project-5f892.firebasestorage.app",
+  messagingSenderId: "8457886057",
+  appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+};
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+// ===== Sidebar toggle =====
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('show');
+  document.getElementById('overlay').classList.toggle('active');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('show');
+  document.getElementById('overlay').classList.remove('active');
+}
+
+// ===== Dropdown toggle (Home) =====
+const homeLink = document.getElementById('homeLink');
+const dropdownContent = document.getElementById('dropdownContent');
+homeLink.addEventListener('click',()=>{
+  dropdownContent.style.display = dropdownContent.style.display==='flex' ? 'none' : 'flex';
+});
+
+// ===== Load page in iframe & handle active class =====
+function loadPage(page, link=null){
+  document.getElementById('contentFrame').src = page;
+
+  // Remove active from all sidebar links
+  document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
+
+  // Add active to clicked link
+  if(link) link.classList.add('active');
+
+  // Hide sidebar after clicking (except Home)
+  if(link && link.id !== 'homeLink' && window.innerWidth <= 768){
+    closeSidebar();
+  }
+}
+
+// ===== Logout function =====
+function logout(){
+  localStorage.removeItem('donorData');
+  renderMenu(); // instant update dropdown
+  loadPage('login.html'); // optional: redirect iframe to login
+}
+
+// ===== Active link highlight in dropdown =====
+function setActiveByHref(href){
+  document.querySelectorAll('.dropdown-content a').forEach(a=>a.classList.remove('active'));
+  const match = Array.from(document.querySelectorAll('.dropdown-content a'))
+    .find(a=>a.getAttribute('onclick')?.includes(href));
+  if(match){ match.classList.add('active'); }
+}
+
+// ===== Render menu based on user info =====
+function renderMenu(){
+  const donorData = JSON.parse(localStorage.getItem('donorData') || 'null');
+  const frame = document.getElementById('contentFrame');
+
+  if(!donorData){
+    dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('login.html'); setActiveByHref('login.html')"><i class="fas fa-sign-in-alt"></i> লগইন</a>
+      <a href="#" onclick="loadPage('signup.html'); setActiveByHref('signup.html')"><i class="fas fa-user-plus"></i> সাইনআপ</a>
+    `;
+    frame.src = "main_page.html";
+    setActiveByHref("login.html");
+  }else if(donorData.email === "admincontrol@gmail.com" && donorData.password === "admincontrol"){
+    dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('admin_panel.html'); setActiveByHref('admin_panel.html')"><i class="fas fa-cogs"></i> অ্যাডমিন প্যানেল</a>
+      <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> লগআউট</a>
+    `;
+    frame.src = "admin_panel.html";
+    setActiveByHref("admin_panel.html");
+  }else{
+    dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('dashboard.html'); setActiveByHref('dashboard.html')"><i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড</a>
+      <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> লগআউট</a>
+    `;
+    frame.src = "dashboard.html";
+    setActiveByHref("dashboard.html");
+  }
+}
+renderMenu();
+
+// ===== Listen for messages from iframe for instant login update =====
+window.addEventListener('message', function(e){
+  if(e.data.type === "loginSuccess"){
+    localStorage.setItem('donorData', JSON.stringify(e.data.data));
+    renderMenu();
+  }
+}, false);
+</script>
+<script>
+  // ===== Auto-update navigation options every 1 second =====
+  setInterval(() => {
+    const donorData = JSON.parse(localStorage.getItem('donorData') || 'null');
+    const dropdownContent = document.getElementById('dropdownContent');
+    
+    if (!donorData) {
+      dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('login.html'); setActiveByHref('login.html')">
+        <i class="fas fa-sign-in-alt"></i> লগইন
+      </a>
+      <a href="#" onclick="loadPage('signup.html'); setActiveByHref('signup.html')">
+        <i class="fas fa-user-plus"></i> সাইনআপ
+      </a>
+    `;
+    } else if (donorData.email === "admincontrol@gmail.com" && donorData.password === "admincontrol") {
+      dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('admin_panel.html'); setActiveByHref('admin_panel.html')">
+        <i class="fas fa-cogs"></i> অ্যাডমিন প্যানেল
+      </a>
+      <a href="#" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> লগআউট
+      </a>
+    `;
+    } else {
+      dropdownContent.innerHTML = `
+      <a href="#" onclick="loadPage('dashboard.html'); setActiveByHref('dashboard.html')">
+        <i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড
+      </a>
+      <a href="#" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> লগআউট
+      </a>
+    `;
+    }
+  }, 1000);
+</script>
+<script>
+  // Automatically hide sidebar on clicking specific dropdown links
+  function autoHideSidebar() {
+    const navLinks = document.querySelectorAll('#dropdownContent a');
+    
+    navLinks.forEach(link => {
+      // Remove previous listener to avoid duplicates
+      link.removeEventListener('click', hideSidebarOnClick);
+      link.addEventListener('click', hideSidebarOnClick);
+    });
+  }
+  
+  function hideSidebarOnClick() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    
+    if (sidebar) sidebar.classList.remove('show'); // hide sidebar
+    if (overlay) overlay.classList.remove('active'); // hide overlay
+  }
+  
+  // Run every second to catch dynamically updated dropdown links
+  setInterval(autoHideSidebar, 1000);
+</script>
+<script>
+  const extraOptionsLink = document.getElementById('extraOptionsLink');
+  const extraOptionsContent = document.getElementById('extraOptionsContent');
+  
+  // Dropdown toggle
+  extraOptionsLink.addEventListener('click', () => {
+    extraOptionsContent.style.display = extraOptionsContent.style.display === 'flex' ? 'none' : 'flex';
+  });
+  
+  // Fetch options from Firebase
+  function loadExtraOptions() {
+    database.ref('extraOptions').once('value').then(snapshot => {
+      const data = snapshot.val();
+      extraOptionsContent.innerHTML = ''; // Clear previous content
+      
+      if (data) {
+        Object.keys(data).forEach(key => {
+          const option = data[key];
+          const a = document.createElement('a');
+          a.href = "#";
+          a.innerHTML = `<i class="fas fa-angle-right"></i> ${option.name}`;
+          a.onclick = () => loadPage(option.link, a);
+          extraOptionsContent.appendChild(a);
+        });
+      } else {
+        extraOptionsContent.innerHTML = `<a href="#">কোনো অপশন নেই</a>`;
+      }
+    });
+  }
+  
+  // Auto load every 5 seconds (optional)
+  setInterval(loadExtraOptions, 5000);
+  loadExtraOptions(); // initial load
+</script>
+</body>
+</html>
