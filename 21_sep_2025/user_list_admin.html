@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>রক্তদাতা তালিকা</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+    body{margin:0;background:#f4f6f8;color:#333;padding:20px;}
+    h2{text-align:center;color:#d32f2f;margin-bottom:20px;font-size:28px;}
+
+    /* Filters */
+    .filters{
+        display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:15px;
+    }
+    .filters select{
+        padding:6px 10px;border:1px solid #ccc;border-radius:6px;
+        font-size:14px;min-width:120px;background:#fff;
+    }
+    .filters select:focus{border-color:#d32f2f;outline:none;}
+
+    /* Count + selection toggle */
+    .topbar{
+        display:flex;justify-content:space-between;align-items:center;
+        margin-bottom:15px;flex-wrap:wrap;gap:10px;
+    }
+    .count{font-weight:600;color:#444;}
+    .selection-actions{display:none;gap:10px;}
+    .selection-actions button,.toggle-select-btn{
+        background:#d32f2f;color:#fff;border:none;padding:8px 14px;
+        border-radius:6px;font-size:14px;cursor:pointer;
+    }
+    .selection-actions button:hover,.toggle-select-btn:hover{background:#b71c1c;}
+
+    /* Table */
+    .table-container{overflow-x:auto;}
+    table{
+        width:100%;border-collapse:collapse;background:#fff;
+        border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.1);
+    }
+    th,td{padding:12px 15px;text-align:left;font-size:15px;}
+    th{background:#d32f2f;color:#fff;}
+    tr:nth-child(even){background:#f9f9f9;}
+    tr:hover{background:#ffe6e6;}
+    .view-btn{
+        background:#1976d2;color:#fff;padding:6px 12px;border:none;
+        border-radius:4px;cursor:pointer;font-size:14px;
+    }
+    .view-btn:hover{background:#0d47a1;}
+    @media(max-width:700px){th,td{font-size:14px;padding:10px;}}
+
+    /* Modal */
+    .modal{
+        display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:1000;
+    }
+    .modal-content{
+        background:#fff;padding:20px;border-radius:10px;
+        max-width:400px;width:90%;text-align:center;
+    }
+    .modal-content h3{margin-top:0;color:#d32f2f;}
+    .modal-content p{margin:8px 0;}
+    .close-modal,
+    .call-btn{
+        background:#d32f2f;color:#fff;padding:8px 14px;border:none;
+        border-radius:6px;cursor:pointer;margin-top:10px;font-size:15px;
+        display:inline-block;
+        text-decoration:none;
+    }
+    .close-modal:hover,.call-btn:hover{background:#b71c1c;}
+    .call-btn{background:#28a745;}
+    .call-btn:hover{background:#1e7e34;}
+  </style>
+</head>
+<body>
+
+  <h2>রক্তদাতা তালিকা</h2>
+
+  <div class="filters">
+      <select id="filterJela"><option value="">জেলা</option></select>
+      <select id="filterUpojela" disabled><option value="">উপজেলা</option></select>
+      <select id="filterBlood">
+          <option value="">রক্তের গ্রুপ</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+      </select>
+  </div>
+
+  <div class="topbar">
+      <div class="count">মোট: <span id="userCount">0</span></div>
+      <button class="toggle-select-btn">সিলেকশন মোড চালু</button>
+      <div class="selection-actions">
+          <button id="deleteSelected">নির্বাচিত মুছে ফেলুন</button>
+      </div>
+  </div>
+
+  <div class="table-container">
+  <table id="userTable">
+      <thead>
+          <tr>
+              <th class="select-col" style="display:none;"><input type="checkbox" id="selectAll"></th>
+              <th>নাম</th>
+              <th>রক্তের গ্রুপ</th>
+              <th>ফোন</th>
+              <th>শেষ রক্তদান</th>
+              <th>অ্যাকশন</th>
+          </tr>
+      </thead>
+      <tbody></tbody>
+  </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="userModal">
+    <div class="modal-content">
+      <h3>বিস্তারিত তথ্য</h3>
+      <div id="modalBody"></div>
+      <a id="callBtn" class="call-btn" href="#" target="_blank">কল করুন</a><br>
+      <button class="close-modal">বন্ধ করুন</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+      authDomain: "earn-project-5f892.firebaseapp.com",
+      databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+      projectId: "earn-project-5f892",
+      storageBucket: "earn-project-5f892.firebasestorage.app",
+      messagingSenderId: "8457886057",
+      appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const filterJela = document.getElementById('filterJela');
+    const filterUpojela = document.getElementById('filterUpojela');
+    const filterBlood = document.getElementById('filterBlood');
+    const userTableBody = document.querySelector('#userTable tbody');
+    const userCount = document.getElementById('userCount');
+    const modal = document.getElementById('userModal');
+    const modalBody = document.getElementById('modalBody');
+    const callBtn = document.getElementById('callBtn');
+    const closeModalBtn = document.querySelector('.close-modal');
+
+    const toggleSelectBtn = document.querySelector('.toggle-select-btn');
+    const selectionActions = document.querySelector('.selection-actions');
+    const selectAllChk = document.getElementById('selectAll');
+
+    let donors = [];
+    let filtered = [];
+    let jelaUpojelaMap = {};
+    let selectionMode = false;
+
+    db.ref('donors').on('value', snap=>{
+        donors = [];
+        jelaUpojelaMap = {};
+        if(snap.exists()){
+            const data = snap.val();
+            for(const id in data){
+                donors.push({...data[id], id});
+                const d = data[id];
+                if(d.district){
+                    if(!jelaUpojelaMap[d.district]) jelaUpojelaMap[d.district] = new Set();
+                    if(d.upazila) jelaUpojelaMap[d.district].add(d.upazila);
+                }
+            }
+        }
+        updateJelaOptions();
+        applyFilter();
+    });
+
+    function updateJelaOptions(){
+        filterJela.innerHTML = '<option value="">জেলা</option>';
+        Object.keys(jelaUpojelaMap).sort().forEach(j=>{
+            let o = document.createElement('option');
+            o.value = j; o.textContent = j;
+            filterJela.appendChild(o);
+        });
+    }
+
+    function daysSince(dateStr){
+        if(!dateStr) return 'ডেটা নেই';
+        const diff = Date.now() - new Date(dateStr).getTime();
+        if(isNaN(diff)) return 'ডেটা নেই';
+        return Math.floor(diff/(1000*60*60*24)); // দিন
+    }
+
+    function applyFilter(){
+        const j = filterJela.value;
+        const u = filterUpojela.value;
+        const b = filterBlood.value;
+        filtered = donors.filter(d =>
+            (!j || d.district===j) &&
+            (!u || d.upazila===u) &&
+            (!b || d.bloodGroup===b)
+        );
+        renderTable();
+        userCount.textContent = filtered.length;
+    }
+
+    function renderTable(){
+        userTableBody.innerHTML = '';
+        if(filtered.length===0){
+            userTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">কোনো তথ্য নেই</td></tr>';
+            return;
+        }
+        filtered.forEach(d=>{
+            const tr = document.createElement('tr');
+            const lastDonateDays = daysSince(d.lastDonateDate);
+            if(selectionMode){
+                tr.innerHTML = `
+                    <td class="select-col"><input type="checkbox" class="rowSelect" data-id="${d.id}"></td>
+                    <td>${d.fullname||''}</td>
+                    <td>${d.bloodGroup||''}</td>
+                    <td>${d.phone||''}</td>
+                    <td>${lastDonateDays}</td>
+                    <td><button class="view-btn" data-id="${d.id}">View</button></td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td style="display:none;"></td>
+                    <td>${d.fullname||''}</td>
+                    <td>${d.bloodGroup||''}</td>
+                    <td>${d.phone||''}</td>
+                    <td>${lastDonateDays}</td>
+                    <td><button class="view-btn" data-id="${d.id}">View</button></td>
+                `;
+            }
+            userTableBody.appendChild(tr);
+        });
+    }
+
+    userTableBody.addEventListener('click',e=>{
+        if(e.target.classList.contains('view-btn')){
+            const id = e.target.dataset.id;
+            const d = donors.find(x=>x.id===id);
+            modalBody.innerHTML = `
+                <p><b>নাম:</b> ${d.fullname||''}</p>
+                <p><b>বয়স:</b> ${d.age||''}</p>
+                <p><b>বিভাগ:</b> ${d.division||''}</p>
+                <p><b>জেলা:</b> ${d.district||''}</p>
+                <p><b>উপজেলা:</b> ${d.upazila||''}</p>
+                <p><b>রক্তের গ্রুপ:</b> ${d.bloodGroup||''}</p>
+                <p><b>ফোন:</b> ${d.phone||''}</p>
+                <p><b>ইমেইল:</b> ${d.email||''}</p>
+                <p><b>শেষ রক্তদান থেকে দিন:</b> ${daysSince(d.lastDonateDate)}</p>
+            `;
+            callBtn.href = `tel:${d.phone||''}`;
+            modal.style.display='flex';
+        }
+    });
+    closeModalBtn.onclick=()=> modal.style.display='none';
+    window.onclick=e=>{if(e.target===modal) modal.style.display='none';};
+
+    filterJela.addEventListener('change',()=>{
+        filterUpojela.innerHTML='<option value="">উপজেলা</option>';
+        const j = filterJela.value;
+        if(j && jelaUpojelaMap[j]){
+            filterUpojela.disabled=false;
+            [...jelaUpojelaMap[j]].sort().forEach(u=>{
+                const o = document.createElement('option');
+                o.value=u; o.textContent=u;
+                filterUpojela.appendChild(o);
+            });
+        } else {filterUpojela.disabled=true;}
+        applyFilter();
+    });
+    filterUpojela.addEventListener('change',applyFilter);
+    filterBlood.addEventListener('change',applyFilter);
+
+    toggleSelectBtn.addEventListener('click',()=>{
+        selectionMode = !selectionMode;
+        document.querySelector('th.select-col').style.display = selectionMode ? '' : 'none';
+        selectAllChk.checked = false;
+        selectionActions.style.display = selectionMode ? 'flex' : 'none';
+        toggleSelectBtn.textContent = selectionMode ? 'সিলেকশন মোড বন্ধ করুন' : 'সিলেকশন মোড চালু';
+        renderTable();
+    });
+    selectAllChk.addEventListener('change',()=>{
+        document.querySelectorAll('.rowSelect').forEach(c=>c.checked=selectAllChk.checked);
+    });
+
+    document.getElementById('deleteSelected').addEventListener('click',()=>{
+        const ids = [...document.querySelectorAll('.rowSelect:checked')].map(c=>c.dataset.id);
+        if(ids.length && confirm('নির্বাচিত ব্যবহারকারী মুছে ফেলবেন?')){
+            ids.forEach(id=>db.ref('donors/'+id).remove());
+        }
+    });
+  </script>
+</body>
+</html>
