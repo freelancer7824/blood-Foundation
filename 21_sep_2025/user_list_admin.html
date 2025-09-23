@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>রক্তদাতা তালিকা</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;font-family:'Noto Sans Bengali',sans-serif;}
+    body{margin:0;background:#f4f6f8;color:#333;padding:20px;}
+    h2{text-align:center;color:#d32f2f;margin-bottom:20px;font-size:28px;}
+
+    /* Filters */
+    .filters{
+        display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:15px;
+    }
+    .filters select{
+        padding:6px 10px;border:1px solid #ccc;border-radius:6px;
+        font-size:14px;min-width:120px;background:#fff;
+    }
+    .filters select:focus{border-color:#d32f2f;outline:none;}
+
+    /* Count + selection toggle */
+    .topbar{
+        display:flex;justify-content:space-between;align-items:center;
+        margin-bottom:15px;flex-wrap:wrap;gap:10px;
+    }
+    .count{font-weight:600;color:#444;}
+    .selection-actions{display:none;gap:10px;align-items:center;}
+    .selection-actions button,.toggle-select-btn{
+        background:#d32f2f;color:#fff;border:none;padding:8px 14px;
+        border-radius:6px;font-size:14px;cursor:pointer;transition:background 0.3s;
+    }
+    .selection-actions button:hover,.toggle-select-btn:hover{background:#b71c1c;}
+    .selection-actions button:disabled{background:#ccc;cursor:not-allowed;}
+
+    /* Table */
+    .table-container{overflow-x:auto;}
+    table{
+        width:100%;border-collapse:collapse;background:#fff;
+        border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.1);
+    }
+    th,td{padding:12px 15px;text-align:left;font-size:15px;}
+    th{background:#d32f2f;color:#fff;}
+    tr:nth-child(even){background:#f9f9f9;}
+    tr:hover{background:#ffe6e6;}
+    .view-btn{
+        background:#1976d2;color:#fff;padding:6px 12px;border:none;
+        border-radius:4px;cursor:pointer;font-size:14px;transition:background 0.3s;
+    }
+    .view-btn:hover{background:#0d47a1;}
+    @media(max-width:700px){th,td{font-size:14px;padding:10px;}}
+
+    /* Modal */
+    .modal{
+        display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:1000;
+    }
+    .modal-content{
+        background:#fff;padding:20px;border-radius:10px;
+        max-width:400px;width:90%;text-align:center;
+    }
+    .modal-content h3{margin-top:0;color:#d32f2f;}
+    .modal-content p{margin:8px 0;}
+    .close-modal,
+    .call-btn{
+        background:#d32f2f;color:#fff;padding:8px 14px;border:none;
+        border-radius:6px;cursor:pointer;margin-top:10px;font-size:15px;
+        display:inline-block;
+        text-decoration:none;transition:background 0.3s;
+    }
+    .close-modal:hover,.call-btn:hover{background:#b71c1c;}
+    .call-btn{background:#28a745;}
+    .call-btn:hover{background:#1e7e34;}
+
+    /* Notification Modal */
+    .notification-modal .modal-content {
+        max-width: 500px;
+    }
+    .notification-modal textarea {
+        width: 100%;
+        height: 120px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        resize: vertical;
+        font-size: 14px;
+        margin-bottom: 15px;
+        font-family: 'Noto Sans Bengali', sans-serif;
+    }
+    .notification-modal .notification-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .notification-modal .notification-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .notification-modal .notification-options input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+    .notification-modal .send-notification-btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+        transition: background 0.3s;
+    }
+    .notification-modal .send-notification-btn:hover {
+        background: #388e3c;
+    }
+    .notification-modal .send-notification-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    /* Permission Section */
+    .permission-section {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #2196f3;
+        display: none;
+    }
+    .permission-section h3 {
+        margin-top: 0;
+        color: #1976d2;
+    }
+    .permission-btn {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1100;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 350px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: transform 0.3s, opacity 0.3s;
+    }
+    .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    .toast.error {
+        background: #f44336;
+    }
+    .toast.info {
+        background: #2196f3;
+    }
+    .toast .close-toast {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0;
+        margin-left: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .topbar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .selection-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .toast {
+            left: 20px;
+            right: 20px;
+            max-width: none;
+        }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>রক্তদাতা তালিকা</h2>
+
+  <!-- Notification Permission Section -->
+  <div class="permission-section" id="permissionSection">
+    <h3>নোটিফিকেশন পারমিশন প্রয়োজন</h3>
+    <p>ব্রাউজার নোটিফিকেশন পেতে দয়া করে পারমিশন দিন।</p>
+    <button class="permission-btn" id="requestPermission">পারমিশন দিন</button>
+    <span id="permissionStatus"></span>
+  </div>
+
+  <div class="filters">
+      <select id="filterJela"><option value="">জেলা</option></select>
+      <select id="filterUpojela" disabled><option value="">উপজেলা</option></select>
+      <select id="filterBlood">
+          <option value="">রক্তের গ্রুপ</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+      </select>
+  </div>
+
+  <div class="topbar">
+      <div class="count">মোট: <span id="userCount">0</span></div>
+      <button class="toggle-select-btn">সিলেকশন মোড চালু</button>
+      <div class="selection-actions">
+          <button id="deleteSelected">নির্বাচিত মুছে ফেলুন</button>
+          <button id="openNotificationModal">নির্বাচিতকে মেসেজ পাঠান</button>
+      </div>
+  </div>
+
+  <div class="table-container">
+  <table id="userTable">
+      <thead>
+          <tr>
+              <th class="select-col" style="display:none;"><input type="checkbox" id="selectAll"></th>
+              <th>নাম</th>
+              <th>রক্তের গ্রুপ</th>
+              <th>ফোন</th>
+              <th>শেষ রক্তদান</th>
+              <th>অ্যাকশন</th>
+          </tr>
+      </thead>
+      <tbody></tbody>
+  </table>
+  </div>
+
+  <!-- User Detail Modal -->
+  <div class="modal" id="userModal">
+    <div class="modal-content">
+      <h3>বিস্তারিত তথ্য</h3>
+      <div id="modalBody"></div>
+      <a id="callBtn" class="call-btn" href="#" target="_blank">কল করুন</a><br>
+      <button class="close-modal">বন্ধ করুন</button>
+    </div>
+  </div>
+
+  <!-- Notification Modal -->
+  <div class="modal notification-modal" id="notificationModal">
+    <div class="modal-content">
+      <h3>নোটিফিকেশন পাঠান</h3>
+      <p id="notificationRecipients">প্রাপক: ০ জন</p>
+      <textarea id="notificationMessage" placeholder="আপনার বার্তা লিখুন..."></textarea>
+      <div class="notification-options">
+        <label>
+          <input type="checkbox" id="sendBrowserNotification" checked>
+          ব্রাউজার নোটিফিকেশন পাঠান
+          <span id="browserNotificationStatus" style="font-size:12px;color:#666;"></span>
+        </label>
+        <label>
+          <input type="checkbox" id="sendPushNotification">
+          পুশ নোটিফিকেশন পাঠান (যদি উপলব্ধ থাকে)
+        </label>
+      </div>
+      <button id="sendNotificationBtn" class="send-notification-btn">নোটিফিকেশন পাঠান</button>
+      <button class="close-modal">বন্ধ করুন</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toastMessage"></span>
+    <button class="close-toast">&times;</button>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+      authDomain: "earn-project-5f892.firebaseapp.com",
+      databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+      projectId: "earn-project-5f892",
+      storageBucket: "earn-project-5f892.firebasestorage.app",
+      messagingSenderId: "8457886057",
+      appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const filterJela = document.getElementById('filterJela');
+    const filterUpojela = document.getElementById('filterUpojela');
+    const filterBlood = document.getElementById('filterBlood');
+    const userTableBody = document.querySelector('#userTable tbody');
+    const userCount = document.getElementById('userCount');
+    const modal = document.getElementById('userModal');
+    const modalBody = document.getElementById('modalBody');
+    const callBtn = document.getElementById('callBtn');
+    const closeModalBtn = document.querySelectorAll('.close-modal');
+
+    const toggleSelectBtn = document.querySelector('.toggle-select-btn');
+    const selectionActions = document.querySelector('.selection-actions');
+    const selectAllChk = document.getElementById('selectAll');
+    const deleteSelectedBtn = document.getElementById('deleteSelected');
+    const openNotificationModalBtn = document.getElementById('openNotificationModal');
+
+    const notificationModal = document.getElementById('notificationModal');
+    const notificationRecipients = document.getElementById('notificationRecipients');
+    const notificationMessage = document.getElementById('notificationMessage');
+    const sendBrowserNotification = document.getElementById('sendBrowserNotification');
+    const sendPushNotification = document.getElementById('sendPushNotification');
+    const sendNotificationBtn = document.getElementById('sendNotificationBtn');
+    const browserNotificationStatus = document.getElementById('browserNotificationStatus');
+
+    const permissionSection = document.getElementById('permissionSection');
+    const requestPermissionBtn = document.getElementById('requestPermission');
+    const permissionStatus = document.getElementById('permissionStatus');
+
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    const closeToastBtn = document.querySelector('.close-toast');
+
+    let donors = [];
+    let filtered = [];
+    let jelaUpojelaMap = {};
+    let selectionMode = false;
+    let selectedUsers = new Set();
+
+    // Check if browser supports notifications
+    const notificationSupported = 'Notification' in window;
+
+    // Update permission status display
+    function updatePermissionStatus() {
+      if (!notificationSupported) {
+        browserNotificationStatus.textContent = '(ব্রাউজার সাপোর্ট করে না)';
+        sendBrowserNotification.disabled = true;
+        permissionSection.style.display = 'block';
+        permissionStatus.innerHTML = '<span style="color:red">আপনার ব্রাউজার নোটিফিকেশন সাপোর্ট করে না</span>';
+        return;
+      }
+
+      switch(Notification.permission) {
+        case 'granted':
+          browserNotificationStatus.textContent = '(পারমিশন দেওয়া আছে)';
+          sendBrowserNotification.disabled = false;
+          permissionSection.style.display = 'none';
+          break;
+        case 'denied':
+          browserNotificationStatus.textContent = '(পারমিশন ব্লক করা আছে)';
+          sendBrowserNotification.disabled = true;
+          permissionSection.style.display = 'block';
+          permissionStatus.innerHTML = '<span style="color:red">নোটিফিকেশন পারমিশন ব্লক করা আছে। ব্রাউজার সেটিংস থেকে আনব্লক করুন।</span>';
+          break;
+        case 'default':
+          browserNotificationStatus.textContent = '(পারমিশন প্রয়োজন)';
+          sendBrowserNotification.disabled = false;
+          permissionSection.style.display = 'block';
+          permissionStatus.innerHTML = '<span style="color:orange">নোটিফিকেশন দেখতে পারমিশন দিন</span>';
+          break;
+      }
+    }
+
+    // Request notification permission
+    function requestNotificationPermission() {
+      if (!notificationSupported) {
+        showToast('আপনার ব্রাউজার নোটিফিকেশন সাপোর্ট করে না', true);
+        return;
+      }
+
+      Notification.requestPermission().then(permission => {
+        updatePermissionStatus();
+        if (permission === 'granted') {
+          showToast('নোটিফিকেশন পারমিশন দেওয়া হয়েছে!', false);
+          // Show a test notification
+          sendBrowserNotificationFunc('রক্তদাতা তালিকা', 'নোটিফিকেশন সফলভাবে কাজ করছে!');
+        } else if (permission === 'denied') {
+          showToast('নোটিফিকেশন পারমিশন ব্লক করা হয়েছে', true);
+        }
+      });
+    }
+
+    // Show toast notification
+    function showToast(message, isError = false, isInfo = false) {
+      toastMessage.textContent = message;
+      toast.className = 'toast' + (isError ? ' error' : (isInfo ? ' info' : ''));
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
+
+    // Close toast
+    closeToastBtn.addEventListener('click', () => {
+      toast.classList.remove('show');
+    });
+
+    // Send browser notification
+    function sendBrowserNotificationFunc(title, message) {
+    if (!('Notification' in window)) {
+        showToast('ব্রাউজার নোটিফিকেশন সাপোর্ট করে না', true);
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        // ✅ Service Worker দিয়ে নোটিফিকেশন দেখান
+        if (window.swRegistration && window.swRegistration.showNotification) {
+            window.swRegistration.showNotification(title, {
+                body: message,
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🩸</text></svg>',
+                badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🩸</text></svg>',
+                vibrate: [200, 100, 200], // optional
+            });
+            return true;
+        } else {
+            console.error('ServiceWorkerRegistration.showNotification() not available');
+            showToast('Service worker লোড হয়নি', true);
+            return false;
+        }
+    } else if (Notification.permission === 'default') {
+        showToast('নোটিফিকেশন দেখতে পারমিশন দিন', true);
+        requestNotificationPermission();
+        return false;
+    } else {
+        showToast('নোটিফিকেশন পারমিশন ব্লক করা আছে', true);
+        return false;
+    }
+}
+
+    function updateJelaOptions(){
+        filterJela.innerHTML = '<option value="">জেলা</option>';
+        Object.keys(jelaUpojelaMap).sort().forEach(j=>{
+            let o = document.createElement('option');
+            o.value = j; o.textContent = j;
+            filterJela.appendChild(o);
+        });
+    }
+
+    function daysSince(dateStr){
+        if(!dateStr) return 'ডেটা নেই';
+        const diff = Date.now() - new Date(dateStr).getTime();
+        if(isNaN(diff)) return 'ডেটা নেই';
+        return Math.floor(diff/(1000*60*60*24)); // দিন
+    }
+
+    function applyFilter(){
+        const j = filterJela.value;
+        const u = filterUpojela.value;
+        const b = filterBlood.value;
+        filtered = donors.filter(d =>
+            (!j || d.district===j) &&
+            (!u || d.upazila===u) &&
+            (!b || d.bloodGroup===b)
+        );
+        renderTable();
+        userCount.textContent = filtered.length;
+    }
+
+    function renderTable(){
+        userTableBody.innerHTML = '';
+        if(filtered.length===0){
+            userTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">কোনো তথ্য নেই</td></tr>';
+            return;
+        }
+        filtered.forEach(d=>{
+            const tr = document.createElement('tr');
+            const lastDonateDays = daysSince(d.lastDonateDate);
+            const isSelected = selectedUsers.has(d.id);
+            
+            if(selectionMode){
+                tr.innerHTML = `
+                    <td class="select-col"><input type="checkbox" class="rowSelect" data-id="${d.id}" ${isSelected ? 'checked' : ''}></td>
+                    <td>${d.fullname||''}</td>
+                    <td>${d.bloodGroup||''}</td>
+                    <td>${d.phone||''}</td>
+                    <td>${lastDonateDays}</td>
+                    <td><button class="view-btn" data-id="${d.id}">View</button></td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td style="display:none;"></td>
+                    <td>${d.fullname||''}</td>
+                    <td>${d.bloodGroup||''}</td>
+                    <td>${d.phone||''}</td>
+                    <td>${lastDonateDays}</td>
+                    <td><button class="view-btn" data-id="${d.id}">View</button></td>
+                `;
+            }
+            userTableBody.appendChild(tr);
+        });
+        
+        // Update notification button state
+        openNotificationModalBtn.disabled = selectedUsers.size === 0;
+    }
+
+    userTableBody.addEventListener('click',e=>{
+        if(e.target.classList.contains('view-btn')){
+            const id = e.target.dataset.id;
+            const d = donors.find(x=>x.id===id);
+            modalBody.innerHTML = `
+                <p><b>নাম:</b> ${d.fullname||''}</p>
+                <p><b>বয়স:</b> ${d.age||''}</p>
+                <p><b>বিভাগ:</b> ${d.division||''}</p>
+                <p><b>জেলা:</b> ${d.district||''}</p>
+                <p><b>উপজেলা:</b> ${d.upazila||''}</p>
+                <p><b>রক্তের গ্রুপ:</b> ${d.bloodGroup||''}</p>
+                <p><b>ফোন:</b> ${d.phone||''}</p>
+                <p><b>ইমেইল:</b> ${d.email||''}</p>
+                <p><b>শেষ রক্তদান থেকে দিন:</b> ${daysSince(d.lastDonateDate)}</p>
+            `;
+            callBtn.href = `tel:${d.phone||''}`;
+            modal.style.display='flex';
+        }
+    });
+    
+    // Close modals
+    closeModalBtn.forEach(btn => {
+      btn.onclick = () => {
+        modal.style.display = 'none';
+        notificationModal.style.display = 'none';
+      };
+    });
+    
+    window.onclick = e => {
+      if(e.target === modal || e.target === notificationModal) {
+        modal.style.display = 'none';
+        notificationModal.style.display = 'none';
+      }
+    };
+
+    filterJela.addEventListener('change',()=>{
+        filterUpojela.innerHTML='<option value="">উপজেলা</option>';
+        const j = filterJela.value;
+        if(j && jelaUpojelaMap[j]){
+            filterUpojela.disabled=false;
+            [...jelaUpojelaMap[j]].sort().forEach(u=>{
+                const o = document.createElement('option');
+                o.value=u; o.textContent=u;
+                filterUpojela.appendChild(o);
+            });
+        } else {filterUpojela.disabled=true;}
+        applyFilter();
+    });
+    filterUpojela.addEventListener('change',applyFilter);
+    filterBlood.addEventListener('change',applyFilter);
+
+    // Selection mode toggle
+    toggleSelectBtn.addEventListener('click',()=>{
+        selectionMode = !selectionMode;
+        document.querySelector('th.select-col').style.display = selectionMode ? '' : 'none';
+        selectAllChk.checked = false;
+        selectionActions.style.display = selectionMode ? 'flex' : 'none';
+        toggleSelectBtn.textContent = selectionMode ? 'সিলেকশন মোড বন্ধ করুন' : 'সিলেকশন মোড চালু';
+        
+        // Clear selection when turning off selection mode
+        if (!selectionMode) {
+          selectedUsers.clear();
+        }
+        
+        renderTable();
+    });
+    
+    // Select all checkbox
+    selectAllChk.addEventListener('change',()=>{
+        const checkboxes = document.querySelectorAll('.rowSelect');
+        checkboxes.forEach(c => {
+          c.checked = selectAllChk.checked;
+          if (selectAllChk.checked) {
+            selectedUsers.add(c.dataset.id);
+          } else {
+            selectedUsers.delete(c.dataset.id);
+          }
+        });
+        openNotificationModalBtn.disabled = selectedUsers.size === 0;
+        notificationRecipients.textContent = `প্রাপক: ${selectedUsers.size} জন`;
+    });
+    
+    // Individual row selection
+    userTableBody.addEventListener('change', e => {
+      if (e.target.classList.contains('rowSelect')) {
+        const id = e.target.dataset.id;
+        if (e.target.checked) {
+          selectedUsers.add(id);
+        } else {
+          selectedUsers.delete(id);
+          selectAllChk.checked = false;
+        }
+        openNotificationModalBtn.disabled = selectedUsers.size === 0;
+        notificationRecipients.textContent = `প্রাপক: ${selectedUsers.size} জন`;
+      }
+    });
+
+    // Delete selected users
+    deleteSelectedBtn.addEventListener('click',()=>{
+        const ids = [...selectedUsers];
+        if(ids.length && confirm('নির্বাচিত ব্যবহারকারী মুছে ফেলবেন?')){
+            ids.forEach(id=>db.ref('donors/'+id).remove());
+            selectedUsers.clear();
+            selectAllChk.checked = false;
+            showToast(`${ids.length} জন ব্যবহারকারী সফলভাবে মুছে ফেলা হয়েছে`);
+        }
+    });
+    
+    // Open notification modal
+    openNotificationModalBtn.addEventListener('click', () => {
+      if (selectedUsers.size === 0) {
+        showToast('দয়া করে কমপক্ষে একজন ব্যবহারকারী নির্বাচন করুন', true);
+        return;
+      }
+      
+      notificationRecipients.textContent = `প্রাপক: ${selectedUsers.size} জন`;
+      notificationMessage.value = '';
+      updatePermissionStatus(); // Update status before showing modal
+      notificationModal.style.display = 'flex';
+    });
+    
+    // Send notification
+    sendNotificationBtn.addEventListener('click', () => {
+      const message = notificationMessage.value.trim();
+      if (!message) {
+        showToast('দয়া করে একটি বার্তা লিখুন', true);
+        return;
+      }
+      
+      const sendBrowser = sendBrowserNotification.checked;
+      const sendPush = sendPushNotification.checked;
+      
+      // Save notification to database
+      const notificationData = {
+        message: message,
+        recipients: [...selectedUsers],
+        timestamp: Date.now(),
+        sendBrowser: sendBrowser,
+        sendPush: sendPush
+      };
+      
+      db.ref('notifications').push(notificationData)
+        .then(() => {
+          let notificationSent = false;
+          
+          // Show browser notification if requested
+          if (sendBrowser) {
+            notificationSent = sendBrowserNotificationFunc('রক্তদাতা তালিকা', message);
+          }
+          
+          if (notificationSent) {
+            showToast(`নোটিফিকেশন ${selectedUsers.size} জন ব্যবহারকারীকে পাঠানো হয়েছে`);
+          } else if (sendBrowser) {
+            showToast('নোটিফিকেশন ডাটাবেসে সেভ হয়েছে কিন্তু ব্রাউজারে দেখানো যায়নি', true);
+          } else {
+            showToast(`নোটিফিকেশন ${selectedUsers.size} জন ব্যবহারকারীকে পাঠানো হয়েছে`);
+          }
+          
+          notificationModal.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Error sending notification:', error);
+          showToast('নোটিফিকেশন পাঠাতে সমস্যা হয়েছে', true);
+        });
+    });
+
+    // Test notification button (for debugging)
+    const testNotificationBtn = document.createElement('button');
+    testNotificationBtn.textContent = 'টেস্ট নোটিফিকেশন';
+    testNotificationBtn.style.position = 'fixed';
+    testNotificationBtn.style.top = '10px';
+    testNotificationBtn.style.right = '10px';
+    testNotificationBtn.style.zIndex = '1000';
+    testNotificationBtn.style.padding = '5px 10px';
+    testNotificationBtn.style.background = '#ff9800';
+    testNotificationBtn.style.color = 'white';
+    testNotificationBtn.style.border = 'none';
+    testNotificationBtn.style.borderRadius = '4px';
+    testNotificationBtn.style.cursor = 'pointer';
+    testNotificationBtn.addEventListener('click', () => {
+      sendBrowserNotificationFunc('টেস্ট নোটিফিকেশন', 'এটি একটি টেস্ট নোটিফিকেশন!');
+    });
+    document.body.appendChild(testNotificationBtn);
+  </script>
+  <script>
+      if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('Service worker registered', reg);
+        window.swRegistration = reg; // পরে ব্যবহার করার জন্য
+    }).catch(err => console.error('SW registration failed:', err));
+}
+  </script>
+  <script>
+    db.ref('donors').on('value', snapshot => {
+        donors = [];
+        snapshot.forEach(child => {
+            donors.push({
+                id: child.key,
+                ...child.val()
+            });
+        });
+        
+        // Upazila list তৈরি
+        jelaUpojelaMap = {};
+        donors.forEach(d => {
+            if (!jelaUpojelaMap[d.district]) jelaUpojelaMap[d.district] = new Set();
+            jelaUpojelaMap[d.district].add(d.upazila);
+        });
+        
+        updateJelaOptions(); // জেলা dropdown রিফ্রেশ
+        filtered = donors; // শুরুর জন্য সব দেখান
+        userCount.textContent = donors.length;
+        renderTable(); // টেবিল রেন্ডার করুন
+    });
+</script>
+</body>
+</html>
