@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post List</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 1rem;
+  }
+
+  h1 {
+    text-align: center;
+    color: #dc3545;
+    margin-bottom: 0.5rem;
+  }
+
+  .total-posts {
+    font-weight: 500;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #333;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
+
+  th, td {
+    padding: 0.8rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background-color: #dc3545;
+    color: white;
+    font-weight: 500;
+  }
+
+  td img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  button {
+    padding: 0.3rem 0.6rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    font-size: 0.85rem;
+    margin-right: 0.3rem;
+  }
+
+  .edit-btn { background-color: #4361ee; }
+  .delete-btn { background-color: #f72585; }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      display: none;
+    }
+
+    tbody tr {
+      margin-bottom: 1rem;
+      background-color: white;
+      padding: 0.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: none;
+      font-size: 0.9rem;
+    }
+
+    td img {
+      width: 50px;
+      height: 50px;
+      margin-right: 0.5rem;
+    }
+
+    td .description {
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* show max 2 lines */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex: 1;
+      margin-right: 0.5rem;
+      color: #555;
+      font-size: 0.9rem;
+    }
+
+    td .actions {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    td .actions .delete-btn {
+      display: inline-block;
+    }
+  }
+ .postBtn{
+   margin-bottom:15px;
+   background:purple;
+   color:white;
+   font-size:15px;
+   font-weight:600;
+ }
+</style>
+</head>
+<body>
+
+<h1>Post List</h1>
+
+<div class="total-posts" id="totalPosts">Total Posts: 0</div>
+<div>
+  <button class="postBtn" type="button" onclick="newPost()">New Post</button><span class="title"><h1>ইসলামি ব্লাড ফাউন্ডেশন</h1></span>
+</div>
+
+<table id="postsTable">
+  <thead>
+    <tr>
+      <th>Post Image</th>
+      <th>User Name</th>
+      <th>Description</th>
+      <th>Post Image</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Posts will load dynamically -->
+  </tbody>
+</table>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAqhLfmOfmP-_8DOcoEH7Ck7fMF9Id4vJ4",
+  authDomain: "earn-project-5f892.firebaseapp.com",
+  databaseURL: "https://earn-project-5f892-default-rtdb.firebaseio.com/",
+  projectId: "earn-project-5f892",
+  storageBucket: "earn-project-5f892.firebasestorage.app",
+  messagingSenderId: "8457886057",
+  appId: "1:8457886057:web:b5e01d0972d169f47085f8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const postsTable = document.getElementById('postsTable').querySelector('tbody');
+const totalPostsElem = document.getElementById('totalPosts');
+
+async function loadPosts() {
+  const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+  const querySnapshot = await getDocs(q);
+  postsTable.innerHTML = '';
+  let count = 0;
+
+  querySnapshot.forEach(docSnap => {
+    count++;
+    const data = docSnap.data();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><img src="${data.userProfile || 'https://via.placeholder.com/50'}" alt="Profile"></td>
+      <td>${data.userName || 'Anonymous'}</td>
+      <td class="description">${data.description || ''}</td>
+      <td>${data.postImage ? `<img src="${data.postImage}" alt="Post Image">` : ''}</td>
+      <td class="actions">
+        <button class="edit-btn">Edit</button>
+        <button class="delete-btn">Delete</button>
+      </td>
+    `;
+    postsTable.appendChild(tr);
+
+    // Delete functionality
+    const deleteBtn = tr.querySelector('.delete-btn');
+    deleteBtn.addEventListener('click', async () => {
+      if(confirm('Are you sure you want to delete this post?')){
+        await deleteDoc(doc(db, "posts", docSnap.id));
+        loadPosts(); // reload after deletion
+      }
+    });
+
+    // Edit functionality
+    const editBtn = tr.querySelector('.edit-btn');
+    editBtn.addEventListener('click', () => {
+      window.location.href = `edit_post.html?id=${docSnap.id}`;
+    });
+  });
+
+  totalPostsElem.textContent = `Total Posts: ${count}`;
+}
+
+loadPosts();
+</script>
+<script>
+  function newPost(){
+    window.location.href="post_admin.html";
+  }
+</script>
+
+</body>
+</html>
